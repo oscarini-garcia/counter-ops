@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --c-bg: #0f172a;
+  --c-surface: #1e293b;
+  --c-surface-2: #334155;
+  --c-border: #475569;
+  --c-text: #f1f5f9;
+  --c-text-muted: #94a3b8;
+  --c-brand: #6366f1;
+  --c-brand-dim: #4f46e5;
+  --c-success: #22c55e;
+  --c-warning: #f59e0b;
+  --c-danger: #ef4444;
+  --c-champion-gold: #fbbf24;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
+* { -webkit-tap-highlight-color: transparent; }
+
+html, body, #root {
+  height: 100%;
+  background-color: var(--c-bg);
+  color: var(--c-text);
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Leaflet CSS required for map */
+.leaflet-container { background: var(--c-surface) !important; }
