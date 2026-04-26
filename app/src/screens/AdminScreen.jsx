@@ -326,9 +326,10 @@ export default function AdminScreen() {
                         <span className="text-sm text-slate-300">{counter?.emoji} {counter?.label ?? e.counter}</span>
                         {e.qty !== 1 && <span className="text-xs text-indigo-400 font-semibold">×{e.qty}</span>}
                       </div>
-                      <div className="text-xs text-slate-500 mt-0.5">
-                        {new Date(e.timestamp).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                        {e.note ? ` · ${e.note}` : ''}
+                      <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                        <span>{new Date(e.timestamp).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                        {e.rating && <span>{'⭐'.repeat(e.rating)}</span>}
+                        {e.note && <span className="italic">"{e.note}"</span>}
                       </div>
                     </div>
                     {isConfirming ? (

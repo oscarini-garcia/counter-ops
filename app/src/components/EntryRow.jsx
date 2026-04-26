@@ -18,6 +18,9 @@ export default function EntryRow({ entry }) {
           <span className="text-slate-400 text-sm">× {entry.qty}</span>
           <span className="text-slate-300 text-sm">{counter?.label ?? entry.counter}</span>
         </div>
+        {entry.rating && (
+          <div className="text-xs mt-0.5">{'⭐'.repeat(entry.rating)}</div>
+        )}
         {entry.location?.label && (
           <div className="text-xs text-slate-400 mt-0.5 truncate">📍 {entry.location.label}</div>
         )}

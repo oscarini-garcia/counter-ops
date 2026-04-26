@@ -13,6 +13,7 @@ export default function LogEntryScreen() {
   const [selectedMember, setSelectedMember] = useState(memberId || '')
   const [selectedCounter, setSelectedCounter] = useState('')
   const [qty, setQty] = useState(1)
+  const [rating, setRating] = useState(null)
   const [note, setNote] = useState('')
 
   const { location, status: gpsStatus, recentLocations, selectLocation } = useGPS()
@@ -38,12 +39,14 @@ export default function LogEntryScreen() {
       memberId: selectedMember,
       counterId: selectedCounter,
       qty,
+      rating,
       location: resolvedLocation,
       note,
     })
     window.dispatchEvent(new CustomEvent('counter-ops:sync'))
     // Reset form
     setQty(1)
+    setRating(null)
     setNote('')
     setManualLocation(null)
   }
@@ -155,6 +158,24 @@ export default function LogEntryScreen() {
           placeholder="e.g. shared with Ana"
           className="w-full bg-slate-700 text-slate-100 rounded-xl px-3 py-2.5 text-sm placeholder-slate-500 outline-none focus:ring-2 focus:ring-indigo-500"
         />
+      </div>
+
+      {/* Rating */}
+      <div>
+        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Rating (optional)</label>
+        <div className="flex gap-2">
+          {[1, 2, 3, 4, 5].map(star => (
+            <button
+              key={star}
+              type="button"
+              onClick={() => setRating(rating === star ? null : star)}
+              className="text-3xl leading-none transition-transform active:scale-110"
+              aria-label={`${star} star`}
+            >
+              {star <= (rating ?? 0) ? '⭐' : '☆'}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Submit */}
