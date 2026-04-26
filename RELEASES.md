@@ -4,6 +4,19 @@ Each entry covers what shipped in that version and the specific files and decisi
 
 ---
 
+### v1.3.0 — 2026-04-26 — Star ratings, admin entry deletion, QR link fix
+
+**1. 1–5 star rating on entries**
+`hooks/useStore.jsx` — `ADD_ENTRY` action now accepts `rating` (1–5 or null) and stores it on the entry object. `screens/LogEntryScreen.jsx` — new **Rating (optional)** row between Note and Submit: five tap targets rendering `⭐` (filled) or `☆` (empty); tapping the active star clears the selection; resets to null on form submit. `components/EntryRow.jsx` — renders `⭐`.repeat(rating) below the member/counter line when rating is set. `screens/AdminScreen.jsx` entries list — shows rating stars inline next to the timestamp.
+
+**2. Admin entry deletion with tombstone sync**
+`lib/storage.js` — `EMPTY_SESSION` gains `deletedEntryIds: []`; `mergeEntries()` accepts a `deletedIds` set and skips any entry (local or remote) whose ID is in it; `mergeSessions()` unions `deletedEntryIds` across sides. `hooks/useStore.jsx` — new `REMOVE_ENTRY` action filters the entry from the array and appends its ID to `deletedEntryIds`. `screens/AdminScreen.jsx` — new collapsible **🗂 Entries (N)** section sorted newest-first; each row shows member, counter emoji/label, qty, timestamp, rating, note; ✕ → inline Cancel/Delete confirm; Delete dispatches `REMOVE_ENTRY` and fires sync.
+
+**3. QR link base path**
+`screens/AdminScreen.jsx` — `baseUrl` changed from `window.location.origin + window.location.pathname.replace(/\/$/, '')` to `window.location.origin + import.meta.env.BASE_URL.replace(/\/$/, '')`. `window.location.pathname` varied depending on the current screen and could omit the `/counter-ops/` subpath; `import.meta.env.BASE_URL` is baked in at build time as the Vite `base` config value and is always correct.
+
+---
+
 ### v1.2.2 — 2026-04-26 — Tombstone deletes + explicit delete confirm
 
 **1. Tombstone deletes**
