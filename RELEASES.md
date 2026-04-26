@@ -4,6 +4,16 @@ Each entry covers what shipped in that version and the specific files and decisi
 
 ---
 
+### v1.1.2 — 2026-04-26 — Fix blank screen on GitHub Pages
+
+**1. vite.config.js base path**
+`base: '/counter-ops/'` was placed as a stray top-level statement outside `defineConfig()` — a syntax no-op that left all asset URLs as `/assets/…`, causing a blank screen on the subpath deploy. Moved inside `defineConfig({ base: '/counter-ops/', … })` where Vite reads it.
+
+**2. PWA manifest start_url**
+Updated `start_url` from `'/'` to `'/counter-ops/'` in the VitePWA manifest block so the installed PWA opens to the correct path.
+
+---
+
 ### v1.1.1 — 2026-04-26 — GitHub Pages subpath fix
 
 **1. Base path**

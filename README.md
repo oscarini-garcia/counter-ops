@@ -50,6 +50,7 @@ GPS fires automatically when you open the Log screen. If it times out (5 seconds
 
 | Version | Date | Summary |
 |---|---|---|
+| 1.1.2 | 2026-04-26 | Fix blank screen — move base path inside defineConfig and fix PWA start_url |
 | 1.1.1 | 2026-04-26 | Fix asset paths for GitHub Pages subpath deployment |
 | 1.1.0 | 2026-04-26 | GitHub Actions workflow for automatic deploy to GitHub Pages |
 | 1.0.1 | 2026-04-26 | Add package-lock.json for reproducible installs |
