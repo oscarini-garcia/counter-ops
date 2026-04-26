@@ -4,6 +4,25 @@ Each entry covers what shipped in that version and the specific files and decisi
 
 ---
 
+### v1.4.0 — 2026-04-27 — Full visual redesign
+
+**1. Design system — CSS custom properties**
+`theme.css` replaced dark-slate palette with a warm terra-cotta theme: `--c-bg: #fef3ed`, `--c-surface: #ffffff`, `--c-brand: #e8613a`, `--c-text: #3d1a0a`, `--c-text-muted: #9a5630`, `--c-border: rgba(200,90,50,0.12)`. Nunito font via Google Fonts. All hardcoded `bg-slate-*`, `text-indigo-*`, `bg-indigo-*` Tailwind color classes removed from every screen and component; replaced with `style={{ color/background: 'var(--c-*)' }}`. `tailwind.config.js` updated to match.
+
+**2. AppShell**
+`AppShell.jsx` — emoji nav icons replaced with inline SVG (`IcoHome`, `IcoPlus`, `IcoList`, `IcoChart`). Active nav item rendered bold with a small brand-colour dot below. Header uses surface/border CSS vars. Settings icon changed to gear SVG.
+
+**3. All screens restyled**
+`HomeScreen.jsx` — scoreboard uses brand colour for champion totals; counter grid uses surface cards with border. `LogEntryScreen.jsx` — chip system refactored to `chipActive`/`chipInactive` style objects using CSS vars; qty buttons styled with brand fill. `ReportScreen.jsx` — leaderboard rows, summary card, awards, moments all use CSS vars. `SettingsScreen.jsx` — admin unlock, sync log, danger zone all use CSS vars.
+
+**4. All components restyled**
+`UndoToast`, `ProfileModal`, `TauntToast`, `SessionSwitcher`, `EntryRow`, `QRCodeCard`, `SyncBadge`, `MemberAvatar`, `CounterCard` — all slate/indigo Tailwind colour classes replaced with CSS var equivalents. `MemberAvatar` generates a stable hue from the member ID for the initials background.
+
+**5. EntryLogScreen and AdminScreen restyled**
+Filter bar, entry rows, sortable member/counter rows, edit forms, confirm dialogs, and entries deletion list all updated to warm theme.
+
+---
+
 ### v1.3.0 — 2026-04-26 — Star ratings, admin entry deletion, QR link fix
 
 **1. 1–5 star rating on entries**

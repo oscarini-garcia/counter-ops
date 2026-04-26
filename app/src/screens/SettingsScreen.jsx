@@ -3,11 +3,11 @@ import { useStore, useDispatch, useNavigate } from '../hooks/useStore.jsx'
 
 export default function SettingsScreen() {
   const { syncLog, adminUnlocked } = useStore()
-  const dispatch = useDispatch()
-  const navigate = useNavigate()
+  const dispatch  = useDispatch()
+  const navigate  = useNavigate()
   const [showResetConfirm, setShowResetConfirm] = useState(false)
-  const [adminKey, setAdminKey] = useState('')
-  const [adminError, setAdminError] = useState(false)
+  const [adminKey,         setAdminKey]         = useState('')
+  const [adminError,       setAdminError]       = useState(false)
 
   function tryUnlockAdmin(e) {
     e.preventDefault()
@@ -39,17 +39,20 @@ export default function SettingsScreen() {
     window.location.reload()
   }
 
+  const sectionLabel = 'block text-xs font-bold uppercase tracking-wider mb-1.5'
+
   return (
-    <div className="px-4 py-4 flex flex-col gap-5 max-w-lg mx-auto pb-8">
-      <h1 className="text-lg font-bold text-slate-100">Settings</h1>
+    <div className="px-4 py-5 flex flex-col gap-6 max-w-lg mx-auto pb-8" style={{ background: 'var(--c-bg)' }}>
+      <h1 className="text-xl font-black" style={{ color: 'var(--c-text)' }}>Settings</h1>
 
       {/* Admin access */}
       <div>
-        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Admin</label>
+        <label className={sectionLabel} style={{ color: 'var(--c-text-muted)' }}>Admin</label>
         {adminUnlocked ? (
           <button
             onClick={() => navigate('admin')}
-            className="w-full bg-indigo-500 text-white font-medium py-3 rounded-xl text-sm active:bg-indigo-600"
+            className="w-full font-semibold py-3 rounded-xl text-sm active:opacity-80 transition-opacity"
+            style={{ background: 'var(--c-brand)', color: '#fff' }}
           >
             ⚙️ Open Admin Panel
           </button>
@@ -60,13 +63,17 @@ export default function SettingsScreen() {
               value={adminKey}
               onChange={e => setAdminKey(e.target.value)}
               placeholder="Admin key"
-              className={`flex-1 bg-slate-700 text-slate-100 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 ${
-                adminError ? 'ring-2 ring-red-500' : 'focus:ring-indigo-500'
-              }`}
+              className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none"
+              style={{
+                background: 'var(--c-surface)',
+                border: adminError ? '2px solid var(--c-danger)' : '1.5px solid var(--c-border)',
+                color: 'var(--c-text)',
+              }}
             />
             <button
               type="submit"
-              className="bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-semibold active:bg-indigo-600"
+              className="px-4 py-2 rounded-xl text-sm font-bold active:opacity-80"
+              style={{ background: 'var(--c-brand)', color: '#fff' }}
             >
               {adminError ? '✗' : 'Unlock'}
             </button>
@@ -76,68 +83,62 @@ export default function SettingsScreen() {
 
       {/* Force refresh */}
       <div>
-        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">App update</label>
+        <label className={sectionLabel} style={{ color: 'var(--c-text-muted)' }}>App update</label>
         <button
           onClick={forceRefresh}
-          className="w-full bg-slate-700 text-slate-200 font-medium py-3 rounded-xl text-sm active:bg-slate-600"
+          className="w-full font-medium py-3 rounded-xl text-sm active:opacity-80 transition-opacity"
+          style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
         >
-          🔄 Force refresh (clears service worker)
+          ↻ Force refresh (clears service worker)
         </button>
       </div>
 
       {/* Sync log */}
       <div>
-        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Sync log (last 10)</label>
-        <div className="bg-slate-800 rounded-xl overflow-hidden">
+        <label className={sectionLabel} style={{ color: 'var(--c-text-muted)' }}>Sync log (last 10)</label>
+        <div className="rounded-xl overflow-hidden" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
           {syncLog?.length ? syncLog.map((entry, i) => (
-            <div key={i} className="px-3 py-2 border-b border-slate-700 last:border-0">
+            <div key={i} className="px-3 py-2" style={{ borderBottom: i < syncLog.length - 1 ? '1px solid var(--c-border)' : 'none' }}>
               <div className="flex items-center gap-2">
-                <span className="text-sm">{entry.status === 'ok' ? '✅' : entry.status === 'error' ? '❌' : '🔄'}</span>
-                <span className="text-xs text-slate-400 flex-1">{entry.message ?? entry.status}</span>
-                <span className="text-xs text-slate-500 flex-shrink-0">{new Date(entry.ts).toLocaleTimeString()}</span>
+                <span className="text-sm">
+                  {entry.status === 'ok' ? '✅' : entry.status === 'error' ? '❌' : '↻'}
+                </span>
+                <span className="text-xs flex-1" style={{ color: 'var(--c-text-muted)' }}>{entry.message ?? entry.status}</span>
+                <span className="text-xs flex-shrink-0" style={{ color: 'var(--c-text-muted)' }}>{new Date(entry.ts).toLocaleTimeString()}</span>
               </div>
               {(entry.binId || entry.keyPreview || entry.httpStatus || entry.responseBody) && (
                 <div className="mt-1 ml-6 flex flex-col gap-0.5">
-                  {entry.binId && (
-                    <span className="text-xs text-slate-400">Bin: <span className="font-mono">{entry.binId}</span></span>
-                  )}
-                  {entry.keyPreview && (
-                    <span className="text-xs text-slate-400">Key: <span className="font-mono">{entry.keyPreview}</span></span>
-                  )}
-                  {entry.httpStatus && (
-                    <span className="text-xs text-red-400">HTTP {entry.httpStatus}</span>
-                  )}
-                  {entry.payloadBytes != null && (
-                    <span className="text-xs text-slate-500">Payload: {(entry.payloadBytes / 1024).toFixed(1)} KB</span>
-                  )}
-                  {entry.responseBody && (
-                    <span className="text-xs text-slate-500 break-all">{entry.responseBody}</span>
-                  )}
+                  {entry.binId       && <span className="text-xs" style={{ color: 'var(--c-text-muted)' }}>Bin: <span className="font-mono">{entry.binId}</span></span>}
+                  {entry.keyPreview  && <span className="text-xs" style={{ color: 'var(--c-text-muted)' }}>Key: <span className="font-mono">{entry.keyPreview}</span></span>}
+                  {entry.httpStatus  && <span className="text-xs" style={{ color: 'var(--c-danger)' }}>HTTP {entry.httpStatus}</span>}
+                  {entry.payloadBytes != null && <span className="text-xs" style={{ color: 'var(--c-text-muted)' }}>Payload: {(entry.payloadBytes / 1024).toFixed(1)} KB</span>}
+                  {entry.responseBody && <span className="text-xs break-all" style={{ color: 'var(--c-text-muted)' }}>{entry.responseBody}</span>}
                 </div>
               )}
             </div>
           )) : (
-            <div className="px-3 py-3 text-xs text-slate-500">No sync attempts yet.</div>
+            <div className="px-3 py-3 text-xs" style={{ color: 'var(--c-text-muted)' }}>No sync attempts yet.</div>
           )}
         </div>
       </div>
 
-      {/* Reset */}
+      {/* Danger zone */}
       <div>
-        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Danger zone</label>
+        <label className={sectionLabel} style={{ color: 'var(--c-text-muted)' }}>Danger zone</label>
         {!showResetConfirm ? (
           <button
             onClick={() => setShowResetConfirm(true)}
-            className="w-full bg-red-900/50 text-red-300 font-medium py-3 rounded-xl text-sm active:bg-red-900"
+            className="w-full font-medium py-3 rounded-xl text-sm active:opacity-80"
+            style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--c-danger)', border: '1px solid rgba(239,68,68,0.2)' }}
           >
             🗑️ Reset local data
           </button>
         ) : (
-          <div className="bg-red-900/50 rounded-xl p-4 flex flex-col gap-3">
-            <p className="text-sm text-red-200">This wipes all local data. Are you sure?</p>
+          <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
+            <p className="text-sm" style={{ color: 'var(--c-danger)' }}>This wipes all local data. Are you sure?</p>
             <div className="flex gap-2">
-              <button onClick={() => setShowResetConfirm(false)} className="flex-1 bg-slate-700 text-slate-200 py-2.5 rounded-xl text-sm font-medium">Cancel</button>
-              <button onClick={resetLocal} className="flex-1 bg-red-600 text-white py-2.5 rounded-xl text-sm font-semibold">Reset</button>
+              <button onClick={() => setShowResetConfirm(false)} className="flex-1 py-2.5 rounded-xl text-sm font-medium" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}>Cancel</button>
+              <button onClick={resetLocal} className="flex-1 py-2.5 rounded-xl text-sm font-bold" style={{ background: 'var(--c-danger)', color: '#fff' }}>Reset</button>
             </div>
           </div>
         )}

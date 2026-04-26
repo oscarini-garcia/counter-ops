@@ -12,14 +12,24 @@ export default function EntryLogScreen() {
     .filter(e => !filterCounter || e.counter === filterCounter)
     .reverse()
 
+  const selectStyle = {
+    background: 'var(--c-surface)',
+    border: '1px solid var(--c-border)',
+    color: 'var(--c-text)',
+  }
+
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full" style={{ background: 'var(--c-bg)' }}>
       {/* Filter bar */}
-      <div className="flex gap-2 px-4 py-3 border-b border-slate-700 overflow-x-auto">
+      <div
+        className="flex gap-2 px-4 py-3 overflow-x-auto"
+        style={{ borderBottom: '1px solid var(--c-border)' }}
+      >
         <select
           value={filterMember}
           onChange={e => setFilterMember(e.target.value)}
-          className="bg-slate-700 text-slate-200 text-sm rounded-lg px-2 py-1.5 outline-none"
+          className="text-sm rounded-lg px-2 py-1.5 outline-none"
+          style={selectStyle}
         >
           <option value="">All members</option>
           {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
@@ -27,7 +37,8 @@ export default function EntryLogScreen() {
         <select
           value={filterCounter}
           onChange={e => setFilterCounter(e.target.value)}
-          className="bg-slate-700 text-slate-200 text-sm rounded-lg px-2 py-1.5 outline-none"
+          className="text-sm rounded-lg px-2 py-1.5 outline-none"
+          style={selectStyle}
         >
           <option value="">All counters</option>
           {counters.map(c => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
@@ -37,7 +48,7 @@ export default function EntryLogScreen() {
       {/* List */}
       <div className="flex-1 overflow-y-auto">
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-2">
+          <div className="flex flex-col items-center justify-center h-full gap-2" style={{ color: 'var(--c-text-muted)' }}>
             <div className="text-4xl">📋</div>
             <p className="text-sm">No entries yet.</p>
           </div>

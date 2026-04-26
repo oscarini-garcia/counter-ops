@@ -26,18 +26,23 @@ function suggestEmoji(label) {
 // Reusable row with up/down/edit/delete controls
 function SortableRow({ item, index, total, onUp, onDown, onEdit, onDelete, children }) {
   return (
-    <div className="flex items-center gap-2 bg-slate-800 rounded-xl px-3 py-2.5">
+    <div
+      className="flex items-center gap-2 rounded-xl px-3 py-2.5"
+      style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}
+    >
       {/* Reorder */}
       <div className="flex flex-col gap-0.5">
         <button
           onClick={onUp}
           disabled={index === 0}
-          className="text-slate-500 disabled:opacity-20 active:text-slate-200 leading-none text-sm"
+          className="disabled:opacity-20 active:opacity-60 leading-none text-sm"
+          style={{ color: 'var(--c-text-muted)' }}
         >▲</button>
         <button
           onClick={onDown}
           disabled={index === total - 1}
-          className="text-slate-500 disabled:opacity-20 active:text-slate-200 leading-none text-sm"
+          className="disabled:opacity-20 active:opacity-60 leading-none text-sm"
+          style={{ color: 'var(--c-text-muted)' }}
         >▼</button>
       </div>
 
@@ -50,11 +55,13 @@ function SortableRow({ item, index, total, onUp, onDown, onEdit, onDelete, child
       <div className="flex gap-1 flex-shrink-0">
         <button
           onClick={onEdit}
-          className="text-xs text-slate-400 active:text-slate-100 px-2 py-1 rounded-lg bg-slate-700"
+          className="text-xs px-2 py-1 rounded-lg active:opacity-70"
+          style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', color: 'var(--c-text-muted)' }}
         >Edit</button>
         <button
           onClick={onDelete}
-          className="text-xs text-red-400 active:text-red-200 px-2 py-1 rounded-lg bg-slate-700"
+          className="text-xs px-2 py-1 rounded-lg active:opacity-70"
+          style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: 'var(--c-danger)' }}
         >✕</button>
       </div>
     </div>
@@ -75,7 +82,8 @@ function EditForm({ label: initLabel, emoji: initEmoji, showEmoji, onSave, onCan
           type="text"
           value={emoji}
           onChange={e => setEmoji(e.target.value)}
-          className="w-10 bg-slate-600 text-slate-100 rounded-lg px-1 py-1.5 text-center text-sm outline-none"
+          className="w-10 rounded-lg px-1 py-1.5 text-center text-sm outline-none"
+          style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
           maxLength={2}
         />
       )}
@@ -83,11 +91,21 @@ function EditForm({ label: initLabel, emoji: initEmoji, showEmoji, onSave, onCan
         type="text"
         value={label}
         onChange={e => setLabel(e.target.value)}
-        className="flex-1 bg-slate-600 text-slate-100 rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500"
+        className="flex-1 rounded-lg px-2 py-1.5 text-sm outline-none"
+        style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
         autoFocus
       />
-      <button type="submit" className="text-xs text-indigo-400 px-2 py-1 font-semibold">Save</button>
-      <button type="button" onClick={onCancel} className="text-xs text-slate-500 px-2 py-1">✕</button>
+      <button
+        type="submit"
+        className="text-xs px-2 py-1 font-semibold active:opacity-70"
+        style={{ color: 'var(--c-brand)' }}
+      >Save</button>
+      <button
+        type="button"
+        onClick={onCancel}
+        className="text-xs px-2 py-1"
+        style={{ color: 'var(--c-text-muted)' }}
+      >✕</button>
     </form>
   )
 }
@@ -107,6 +125,12 @@ export default function AdminScreen() {
   const [deleteEntryConfirm, setDeleteEntryConfirm] = useState(null) // entry id
 
   const baseUrl = window.location.origin + import.meta.env.BASE_URL.replace(/\/$/, '')
+
+  const inputStyle = {
+    background: 'var(--c-surface)',
+    border: '1.5px solid var(--c-border)',
+    color: 'var(--c-text)',
+  }
 
   function addCounter(e) {
     e.preventDefault()
@@ -141,17 +165,20 @@ export default function AdminScreen() {
   }
 
   return (
-    <div className="px-4 py-4 flex flex-col gap-6 max-w-lg mx-auto pb-8">
-      <h1 className="text-lg font-bold text-slate-100">⚙️ Admin</h1>
+    <div className="px-4 py-4 flex flex-col gap-6 max-w-lg mx-auto pb-8" style={{ background: 'var(--c-bg)' }}>
+      <h1 className="text-lg font-bold" style={{ color: 'var(--c-text)' }}>⚙️ Admin</h1>
 
       {/* ── COUNTERS ── */}
       <div>
-        <h2 className="text-sm font-semibold text-slate-300 mb-3">Counters</h2>
+        <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--c-text-muted)' }}>Counters</h2>
         <div className="flex flex-col gap-1.5 mb-3">
           {counters.map((c, i) => (
             <div key={c.id}>
               {editingCounter === c.id ? (
-                <div className="bg-slate-800 rounded-xl px-3 py-2.5">
+                <div
+                  className="rounded-xl px-3 py-2.5"
+                  style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}
+                >
                   <EditForm
                     label={c.label}
                     emoji={c.emoji}
@@ -165,11 +192,22 @@ export default function AdminScreen() {
                   />
                 </div>
               ) : deleteConfirm?.type === 'counter' && deleteConfirm?.id === c.id ? (
-                <div className="bg-red-900/40 border border-red-700/50 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
-                  <span className="text-sm text-red-200">Delete <strong>{c.label}</strong>?</span>
+                <div
+                  className="rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+                  style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}
+                >
+                  <span className="text-sm" style={{ color: 'var(--c-danger)' }}>Delete <strong>{c.label}</strong>?</span>
                   <div className="flex gap-2 flex-shrink-0">
-                    <button onClick={() => setDeleteConfirm(null)} className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 text-slate-200">Cancel</button>
-                    <button onClick={() => confirmDelete('counter', c.id)} className="text-xs px-3 py-1.5 rounded-lg bg-red-600 text-white font-semibold">Delete</button>
+                    <button
+                      onClick={() => setDeleteConfirm(null)}
+                      className="text-xs px-3 py-1.5 rounded-lg active:opacity-70"
+                      style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
+                    >Cancel</button>
+                    <button
+                      onClick={() => confirmDelete('counter', c.id)}
+                      className="text-xs px-3 py-1.5 rounded-lg font-semibold active:opacity-80"
+                      style={{ background: 'var(--c-danger)', color: '#fff' }}
+                    >Delete</button>
                   </div>
                 </div>
               ) : (
@@ -183,7 +221,7 @@ export default function AdminScreen() {
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-xl">{c.emoji}</span>
-                    <span className="text-sm font-medium text-slate-100">{c.label}</span>
+                    <span className="text-sm font-medium" style={{ color: 'var(--c-text)' }}>{c.label}</span>
                   </div>
                 </SortableRow>
               )}
@@ -198,7 +236,8 @@ export default function AdminScreen() {
             value={newCounterEmoji}
             onChange={e => setNewCounterEmoji(e.target.value)}
             placeholder="🍦"
-            className="w-12 bg-slate-700 text-slate-100 rounded-xl px-2 py-2 text-center outline-none"
+            className="w-12 rounded-xl px-2 py-2 text-center outline-none"
+            style={inputStyle}
             maxLength={2}
           />
           <input
@@ -209,9 +248,14 @@ export default function AdminScreen() {
               if (!newCounterEmoji) setNewCounterEmoji(suggestEmoji(e.target.value))
             }}
             placeholder="Counter name"
-            className="flex-1 bg-slate-700 text-slate-100 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex-1 rounded-xl px-3 py-2 text-sm outline-none"
+            style={inputStyle}
           />
-          <button type="submit" className="bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-semibold active:bg-indigo-600">
+          <button
+            type="submit"
+            className="px-4 py-2 rounded-xl text-sm font-semibold active:opacity-80"
+            style={{ background: 'var(--c-brand)', color: '#fff' }}
+          >
             Add
           </button>
         </form>
@@ -219,7 +263,7 @@ export default function AdminScreen() {
 
       {/* ── MEMBERS ── */}
       <div>
-        <h2 className="text-sm font-semibold text-slate-300 mb-3">Family members</h2>
+        <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--c-text-muted)' }}>Family members</h2>
         <div className="flex flex-col gap-1.5 mb-3">
           {members.map((m, i) => {
             const expectedId = slugify(m.name)
@@ -227,7 +271,10 @@ export default function AdminScreen() {
             return (
               <div key={m.id}>
                 {editingMember === m.id ? (
-                  <div className="bg-slate-800 rounded-xl px-3 py-2.5 flex flex-col gap-2">
+                  <div
+                    className="rounded-xl px-3 py-2.5 flex flex-col gap-2"
+                    style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}
+                  >
                     <EditForm
                       label={m.name}
                       showEmoji={false}
@@ -239,8 +286,11 @@ export default function AdminScreen() {
                       onCancel={() => setEditingMember(null)}
                     />
                     {idMismatch && (
-                      <div className="flex items-center gap-2 pt-1 border-t border-slate-700">
-                        <span className="text-xs text-amber-400 flex-1">
+                      <div
+                        className="flex items-center gap-2 pt-1"
+                        style={{ borderTop: '1px solid var(--c-border)' }}
+                      >
+                        <span className="text-xs flex-1" style={{ color: 'var(--c-warning)' }}>
                           Link ID is <span className="font-mono">{m.id}</span> — fix to <span className="font-mono">{expectedId}</span>?
                         </span>
                         <button
@@ -250,7 +300,8 @@ export default function AdminScreen() {
                             setEditingMember(null)
                             window.dispatchEvent(new CustomEvent('counter-ops:sync'))
                           }}
-                          className="text-xs bg-amber-600 text-white px-3 py-1 rounded-lg font-semibold active:bg-amber-700 flex-shrink-0"
+                          className="text-xs px-3 py-1 rounded-lg font-semibold active:opacity-80 flex-shrink-0"
+                          style={{ background: 'var(--c-warning)', color: '#fff' }}
                         >
                           Fix ID
                         </button>
@@ -258,11 +309,22 @@ export default function AdminScreen() {
                     )}
                   </div>
                 ) : deleteConfirm?.type === 'member' && deleteConfirm?.id === m.id ? (
-                  <div className="bg-red-900/40 border border-red-700/50 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
-                    <span className="text-sm text-red-200">Delete <strong>{m.name}</strong>?</span>
+                  <div
+                    className="rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+                    style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}
+                  >
+                    <span className="text-sm" style={{ color: 'var(--c-danger)' }}>Delete <strong>{m.name}</strong>?</span>
                     <div className="flex gap-2 flex-shrink-0">
-                      <button onClick={() => setDeleteConfirm(null)} className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 text-slate-200">Cancel</button>
-                      <button onClick={() => confirmDelete('member', m.id)} className="text-xs px-3 py-1.5 rounded-lg bg-red-600 text-white font-semibold">Delete</button>
+                      <button
+                        onClick={() => setDeleteConfirm(null)}
+                        className="text-xs px-3 py-1.5 rounded-lg active:opacity-70"
+                        style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
+                      >Cancel</button>
+                      <button
+                        onClick={() => confirmDelete('member', m.id)}
+                        className="text-xs px-3 py-1.5 rounded-lg font-semibold active:opacity-80"
+                        style={{ background: 'var(--c-danger)', color: '#fff' }}
+                      >Delete</button>
                     </div>
                   </div>
                 ) : (
@@ -275,9 +337,12 @@ export default function AdminScreen() {
                     onDelete={() => confirmDelete('member', m.id)}
                   >
                     <div>
-                      <span className="text-sm font-medium text-slate-100">{m.name}</span>
-                      <span className={`text-xs ml-2 font-mono ${idMismatch ? 'text-amber-400' : 'text-slate-500'}`}>{m.id}</span>
-                      {idMismatch && <span className="text-xs text-amber-400 ml-1">⚠️</span>}
+                      <span className="text-sm font-medium" style={{ color: 'var(--c-text)' }}>{m.name}</span>
+                      <span
+                        className="text-xs ml-2 font-mono"
+                        style={{ color: idMismatch ? 'var(--c-warning)' : 'var(--c-text-muted)' }}
+                      >{m.id}</span>
+                      {idMismatch && <span className="text-xs ml-1">⚠️</span>}
                     </div>
                   </SortableRow>
                 )}
@@ -293,9 +358,14 @@ export default function AdminScreen() {
             value={newMemberName}
             onChange={e => setNewMemberName(e.target.value)}
             placeholder="Member name"
-            className="flex-1 bg-slate-700 text-slate-100 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex-1 rounded-xl px-3 py-2 text-sm outline-none"
+            style={inputStyle}
           />
-          <button type="submit" className="bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-semibold active:bg-indigo-600">
+          <button
+            type="submit"
+            className="px-4 py-2 rounded-xl text-sm font-semibold active:opacity-80"
+            style={{ background: 'var(--c-brand)', color: '#fff' }}
+          >
             Add
           </button>
         </form>
@@ -306,10 +376,11 @@ export default function AdminScreen() {
         <div>
           <button
             onClick={() => setShowEntries(v => !v)}
-            className="w-full flex items-center justify-between bg-slate-800 rounded-xl px-4 py-3 text-sm font-medium text-slate-200 active:bg-slate-700"
+            className="w-full flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium active:opacity-80"
+            style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
           >
             <span>🗂 Entries ({entries.length})</span>
-            <span className="text-slate-400">{showEntries ? '▲' : '▼'}</span>
+            <span style={{ color: 'var(--c-text-muted)' }}>{showEntries ? '▲' : '▼'}</span>
           </button>
           {showEntries && (
             <div className="flex flex-col gap-1 mt-2 max-h-96 overflow-y-auto">
@@ -318,15 +389,25 @@ export default function AdminScreen() {
                 const counter = counters.find(c => c.id === e.counter)
                 const isConfirming = deleteEntryConfirm === e.id
                 return (
-                  <div key={e.id} className={`rounded-xl px-3 py-2 flex items-center gap-2 ${isConfirming ? 'bg-red-900/40 border border-red-700/50' : 'bg-slate-800'}`}>
+                  <div
+                    key={e.id}
+                    className="rounded-xl px-3 py-2 flex items-center gap-2"
+                    style={
+                      isConfirming
+                        ? { background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }
+                        : { background: 'var(--c-surface)', border: '1px solid var(--c-border)' }
+                    }
+                  >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-sm font-medium text-slate-100">{memberName}</span>
-                        <span className="text-slate-500 text-xs">·</span>
-                        <span className="text-sm text-slate-300">{counter?.emoji} {counter?.label ?? e.counter}</span>
-                        {e.qty !== 1 && <span className="text-xs text-indigo-400 font-semibold">×{e.qty}</span>}
+                        <span className="text-sm font-medium" style={{ color: 'var(--c-text)' }}>{memberName}</span>
+                        <span className="text-xs" style={{ color: 'var(--c-text-muted)' }}>·</span>
+                        <span className="text-sm" style={{ color: 'var(--c-text)' }}>{counter?.emoji} {counter?.label ?? e.counter}</span>
+                        {e.qty !== 1 && (
+                          <span className="text-xs font-semibold" style={{ color: 'var(--c-brand)' }}>×{e.qty}</span>
+                        )}
                       </div>
-                      <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                      <div className="text-xs mt-0.5 flex items-center gap-1.5 flex-wrap" style={{ color: 'var(--c-text-muted)' }}>
                         <span>{new Date(e.timestamp).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                         {e.rating && <span>{'⭐'.repeat(e.rating)}</span>}
                         {e.note && <span className="italic">"{e.note}"</span>}
@@ -334,20 +415,26 @@ export default function AdminScreen() {
                     </div>
                     {isConfirming ? (
                       <div className="flex gap-1.5 flex-shrink-0">
-                        <button onClick={() => setDeleteEntryConfirm(null)} className="text-xs px-2 py-1 rounded-lg bg-slate-700 text-slate-200">Cancel</button>
+                        <button
+                          onClick={() => setDeleteEntryConfirm(null)}
+                          className="text-xs px-2 py-1 rounded-lg active:opacity-70"
+                          style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
+                        >Cancel</button>
                         <button
                           onClick={() => {
                             dispatch({ type: 'REMOVE_ENTRY', id: e.id })
                             setDeleteEntryConfirm(null)
                             window.dispatchEvent(new CustomEvent('counter-ops:sync'))
                           }}
-                          className="text-xs px-2 py-1 rounded-lg bg-red-600 text-white font-semibold"
+                          className="text-xs px-2 py-1 rounded-lg font-semibold active:opacity-80"
+                          style={{ background: 'var(--c-danger)', color: '#fff' }}
                         >Delete</button>
                       </div>
                     ) : (
                       <button
                         onClick={() => setDeleteEntryConfirm(e.id)}
-                        className="text-slate-500 active:text-red-400 flex-shrink-0 px-1 py-1 text-lg leading-none"
+                        className="flex-shrink-0 px-1 py-1 text-lg leading-none active:opacity-60"
+                        style={{ color: 'var(--c-text-muted)' }}
                       >✕</button>
                     )}
                   </div>
@@ -363,10 +450,11 @@ export default function AdminScreen() {
         <div>
           <button
             onClick={() => setShowQR(q => !q)}
-            className="w-full flex items-center justify-between bg-slate-800 rounded-xl px-4 py-3 text-sm font-medium text-slate-200 active:bg-slate-700"
+            className="w-full flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium active:opacity-80"
+            style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
           >
             <span>📲 Member links & QR codes</span>
-            <span className="text-slate-400">{showQR ? '▲' : '▼'}</span>
+            <span style={{ color: 'var(--c-text-muted)' }}>{showQR ? '▲' : '▼'}</span>
           </button>
           {showQR && (
             <div className="flex flex-col gap-4 mt-3">

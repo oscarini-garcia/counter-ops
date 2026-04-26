@@ -50,6 +50,7 @@ GPS fires automatically when you open the Log screen. If it times out (5 seconds
 
 | Version | Date | Summary |
 |---|---|---|
+| 1.4.0 | 2026-04-27 | Full visual redesign — warm orange theme, Nunito font, SVG nav icons, CSS custom properties |
 | 1.3.0 | 2026-04-26 | Star ratings on entries, admin entry deletion, QR link path fix |
 | 1.2.2 | 2026-04-26 | Tombstone deletes so sync never resurrects removed members; explicit Cancel/Delete confirm |
 | 1.2.1 | 2026-04-26 | Fix nav buttons doing nothing when app has no sessions yet |

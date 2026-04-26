@@ -10,25 +10,22 @@ export default function LogEntryScreen() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
-  const [selectedMember, setSelectedMember] = useState(memberId || '')
+  const [selectedMember,  setSelectedMember]  = useState(memberId || '')
   const [selectedCounter, setSelectedCounter] = useState('')
-  const [qty, setQty] = useState(1)
-  const [rating, setRating] = useState(null)
-  const [note, setNote] = useState('')
+  const [qty,             setQty]             = useState(1)
+  const [rating,          setRating]          = useState(null)
+  const [note,            setNote]            = useState('')
 
   const { location, status: gpsStatus, recentLocations, selectLocation } = useGPS()
   const [manualLocation, setManualLocation] = useState(null)
 
   const resolvedLocation = manualLocation ?? (gpsStatus === 'resolved' ? location : null)
-  const showFallback = gpsStatus === 'timeout' || gpsStatus === 'denied'
+  const showFallback     = gpsStatus === 'timeout' || gpsStatus === 'denied'
 
-  const activeCounters = counters
-
-  // Pre-select counter from URL param (e.g. quick-log from another screen)
   useEffect(() => {
-    const p = new URLSearchParams(window.location.search)
+    const p   = new URLSearchParams(window.location.search)
     const cid = p.get('counter')
-    if (cid && activeCounters.find(c => c.id === cid)) setSelectedCounter(cid)
+    if (cid && counters.find(c => c.id === cid)) setSelectedCounter(cid)
   }, [])
 
   function handleSubmit(e) {
@@ -44,32 +41,31 @@ export default function LogEntryScreen() {
       note,
     })
     window.dispatchEvent(new CustomEvent('counter-ops:sync'))
-    // Reset form
-    setQty(1)
-    setRating(null)
-    setNote('')
-    setManualLocation(null)
+    setQty(1); setRating(null); setNote(''); setManualLocation(null)
   }
 
+  const chipActive   = { background: 'var(--c-brand)',    color: '#fff',              border: '1.5px solid var(--c-brand)' }
+  const chipInactive = { background: 'var(--c-surface)',   color: 'var(--c-text)',     border: '1.5px solid var(--c-border)' }
+  const chip = (active) => ({
+    padding: '7px 16px', borderRadius: 999, fontSize: 13, fontWeight: 700,
+    cursor: 'pointer', transition: 'all 0.15s',
+    ...(active ? chipActive : chipInactive),
+  })
+
   return (
-    <form onSubmit={handleSubmit} className="px-4 py-4 flex flex-col gap-4 max-w-lg mx-auto">
-      <h1 className="text-lg font-bold text-slate-100">Log Entry</h1>
+    <form
+      onSubmit={handleSubmit}
+      className="px-4 py-5 flex flex-col gap-5 max-w-lg mx-auto"
+      style={{ background: 'var(--c-bg)' }}
+    >
+      <h1 className="text-xl font-black" style={{ color: 'var(--c-text)' }}>Log Entry</h1>
 
       {/* Who */}
       <div>
-        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Who</label>
+        <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--c-text-muted)' }}>Who</label>
         <div className="flex flex-wrap gap-2">
           {members.map(m => (
-            <button
-              key={m.id}
-              type="button"
-              onClick={() => setSelectedMember(m.id)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                selectedMember === m.id
-                  ? 'bg-indigo-500 text-white'
-                  : 'bg-slate-700 text-slate-200 active:bg-slate-600'
-              }`}
-            >
+            <button key={m.id} type="button" onClick={() => setSelectedMember(m.id)} style={chip(selectedMember === m.id)}>
               {m.name}
             </button>
           ))}
@@ -78,20 +74,11 @@ export default function LogEntryScreen() {
 
       {/* What */}
       <div>
-        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">What</label>
+        <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--c-text-muted)' }}>What</label>
         <div className="flex flex-wrap gap-2">
-          {activeCounters.map(c => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => setSelectedCounter(c.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                selectedCounter === c.id
-                  ? 'bg-indigo-500 text-white'
-                  : 'bg-slate-700 text-slate-200 active:bg-slate-600'
-              }`}
-            >
-              <span>{c.emoji}</span> {c.label}
+          {counters.map(c => (
+            <button key={c.id} type="button" onClick={() => setSelectedCounter(c.id)} style={chip(selectedCounter === c.id)}>
+              {c.emoji} {c.label}
             </button>
           ))}
         </div>
@@ -99,46 +86,59 @@ export default function LogEntryScreen() {
 
       {/* How many */}
       <div>
-        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">How many</label>
-        <div className="flex items-center gap-3">
-          <button type="button" onClick={() => setQty(q => Math.max(1, q - 1))}
-            className="w-10 h-10 rounded-full bg-slate-700 text-slate-100 text-xl font-bold active:bg-slate-600 flex items-center justify-center">−</button>
-          <span className="text-2xl font-bold text-slate-100 min-w-[2ch] text-center">{qty}</span>
-          <button type="button" onClick={() => setQty(q => q + 1)}
-            className="w-10 h-10 rounded-full bg-slate-700 text-slate-100 text-xl font-bold active:bg-slate-600 flex items-center justify-center">+</button>
+        <label className="block text-xs font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--c-text-muted)' }}>How many</label>
+        <div className="flex items-center gap-5">
+          <button
+            type="button"
+            onClick={() => setQty(q => Math.max(1, q - 1))}
+            className="w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold active:opacity-70 transition-opacity"
+            style={{ background: 'var(--c-surface)', border: '1.5px solid var(--c-border)', color: 'var(--c-text)' }}
+          >
+            −
+          </button>
+          <span className="text-4xl font-black min-w-[3ch] text-center" style={{ color: 'var(--c-text)' }}>{qty}</span>
+          <button
+            type="button"
+            onClick={() => setQty(q => q + 1)}
+            className="w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold active:opacity-70 transition-opacity"
+            style={{ background: 'var(--c-brand)', color: '#fff', border: 'none' }}
+          >
+            +
+          </button>
         </div>
       </div>
 
       {/* Where */}
       <div>
-        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Where</label>
+        <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--c-text-muted)' }}>Where</label>
         {gpsStatus === 'resolving' && (
-          <div className="text-sm text-slate-400 flex items-center gap-2">
-            <span className="animate-spin">🔄</span> Getting location…
+          <div className="text-sm flex items-center gap-2" style={{ color: 'var(--c-text-muted)' }}>
+            <span className="animate-spin inline-block">↻</span> Getting location…
           </div>
         )}
         {gpsStatus === 'resolved' && location && !manualLocation && (
-          <div className="text-sm text-slate-300 flex items-center gap-1.5">
-            <span>📍</span> {location.label || `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`}
-            <button type="button" onClick={() => setManualLocation(null)} className="text-xs text-slate-500 ml-1">✕</button>
+          <div className="text-sm flex items-center gap-1.5 px-3 py-2 rounded-xl" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}>
+            <span>📍</span>
+            <span className="flex-1">{location.label || `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`}</span>
+            <button type="button" onClick={() => setManualLocation(null)} className="text-xs ml-1" style={{ color: 'var(--c-text-muted)' }}>✕</button>
           </div>
         )}
         {manualLocation && (
-          <div className="text-sm text-slate-300 flex items-center gap-1.5">
-            <span>📍</span> {manualLocation.label}
-            <button type="button" onClick={() => setManualLocation(null)} className="text-xs text-slate-500 ml-1">✕</button>
+          <div className="text-sm flex items-center gap-1.5 px-3 py-2 rounded-xl" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}>
+            <span>📍</span>
+            <span className="flex-1">{manualLocation.label}</span>
+            <button type="button" onClick={() => setManualLocation(null)} className="text-xs ml-1" style={{ color: 'var(--c-text-muted)' }}>✕</button>
           </div>
         )}
         {showFallback && recentLocations.length > 0 && !manualLocation && (
           <div>
-            <p className="text-xs text-slate-400 mb-1.5">GPS unavailable — tap a recent location:</p>
+            <p className="text-xs mb-1.5" style={{ color: 'var(--c-text-muted)' }}>GPS unavailable — tap a recent location:</p>
             <div className="flex flex-col gap-1">
               {recentLocations.map((loc, i) => (
                 <button
-                  key={i}
-                  type="button"
-                  onClick={() => setManualLocation(loc)}
-                  className="text-left text-sm px-3 py-2 bg-slate-700 rounded-lg text-slate-200 active:bg-slate-600"
+                  key={i} type="button" onClick={() => setManualLocation(loc)}
+                  className="text-left text-sm px-3 py-2 rounded-xl active:opacity-70"
+                  style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
                 >
                   📍 {loc.label}
                 </button>
@@ -150,26 +150,30 @@ export default function LogEntryScreen() {
 
       {/* Note */}
       <div>
-        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Note (optional)</label>
+        <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--c-text-muted)' }}>Note (optional)</label>
         <input
           type="text"
           value={note}
           onChange={e => setNote(e.target.value)}
           placeholder="e.g. shared with Ana"
-          className="w-full bg-slate-700 text-slate-100 rounded-xl px-3 py-2.5 text-sm placeholder-slate-500 outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+          style={{
+            background: 'var(--c-surface)',
+            border: '1.5px solid var(--c-border)',
+            color: 'var(--c-text)',
+          }}
         />
       </div>
 
       {/* Rating */}
       <div>
-        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Rating (optional)</label>
+        <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--c-text-muted)' }}>Rating (optional)</label>
         <div className="flex gap-2">
           {[1, 2, 3, 4, 5].map(star => (
             <button
-              key={star}
-              type="button"
+              key={star} type="button"
               onClick={() => setRating(rating === star ? null : star)}
-              className="text-3xl leading-none transition-transform active:scale-110"
+              className="text-3xl leading-none active:scale-110 transition-transform"
               aria-label={`${star} star`}
             >
               {star <= (rating ?? 0) ? '⭐' : '☆'}
@@ -182,7 +186,8 @@ export default function LogEntryScreen() {
       <button
         type="submit"
         disabled={!selectedMember || !selectedCounter}
-        className="w-full bg-indigo-500 text-white font-semibold py-3.5 rounded-2xl text-base disabled:opacity-40 active:bg-indigo-600 transition-colors mt-2"
+        className="w-full font-bold py-4 rounded-2xl text-base disabled:opacity-40 active:opacity-80 transition-opacity mt-1"
+        style={{ background: 'var(--c-brand)', color: '#fff', fontSize: 16 }}
       >
         Log It ✓
       </button>

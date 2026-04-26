@@ -58,22 +58,26 @@ export default function SessionSwitcher() {
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60" onClick={close}>
       <div
-        className="bg-slate-800 rounded-t-3xl w-full max-w-lg"
-        style={{ paddingBottom: 'calc(1.5rem + var(--safe-bottom))' }}
+        className="rounded-t-3xl w-full max-w-lg"
+        style={{
+          background: 'var(--c-surface)',
+          paddingBottom: 'calc(1.5rem + var(--safe-bottom))',
+        }}
         onClick={e => e.stopPropagation()}
       >
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 bg-slate-600 rounded-full" />
+          <div className="w-10 h-1 rounded-full" style={{ background: 'var(--c-border)' }} />
         </div>
 
         <div className="px-5 pt-2 pb-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-slate-100">Sessions</h2>
+            <h2 className="text-base font-bold" style={{ color: 'var(--c-text)' }}>Sessions</h2>
             {adminUnlocked && (
               <button
                 onClick={() => setCreating(c => !c)}
-                className="text-sm text-indigo-400 font-semibold active:text-indigo-300"
+                className="text-sm font-semibold active:opacity-70"
+                style={{ color: 'var(--c-brand)' }}
               >
                 + New
               </button>
@@ -88,10 +92,19 @@ export default function SessionSwitcher() {
                 value={newName}
                 onChange={e => setNewName(e.target.value)}
                 placeholder="Session name (e.g. Menorca 2027)"
-                className="flex-1 bg-slate-700 text-slate-100 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none"
+                style={{
+                  background: 'var(--c-surface-2)',
+                  border: '1.5px solid var(--c-border)',
+                  color: 'var(--c-text)',
+                }}
                 autoFocus
               />
-              <button type="submit" className="bg-indigo-500 text-white px-4 rounded-xl text-sm font-semibold active:bg-indigo-600">
+              <button
+                type="submit"
+                className="px-4 rounded-xl text-sm font-semibold active:opacity-80"
+                style={{ background: 'var(--c-brand)', color: '#fff' }}
+              >
                 Create
               </button>
             </form>
@@ -102,11 +115,12 @@ export default function SessionSwitcher() {
             {sorted.map(s => (
               <div
                 key={s.id}
-                className={`flex items-center gap-3 rounded-2xl px-4 py-3 transition-colors ${
+                className="flex items-center gap-3 rounded-2xl px-4 py-3 transition-colors"
+                style={
                   s.id === activeSessionId
-                    ? 'bg-indigo-600/30 border border-indigo-500/50'
-                    : 'bg-slate-700 active:bg-slate-600'
-                }`}
+                    ? { background: 'var(--c-surface-2)', border: '1.5px solid var(--c-brand)', borderColor: 'var(--c-brand)' }
+                    : { background: 'var(--c-surface-2)', border: '1px solid var(--c-border)' }
+                }
               >
                 {renamingId === s.id ? (
                   <form onSubmit={saveRename} className="flex gap-2 flex-1">
@@ -114,11 +128,25 @@ export default function SessionSwitcher() {
                       type="text"
                       value={renameValue}
                       onChange={e => setRenameValue(e.target.value)}
-                      className="flex-1 bg-slate-600 text-slate-100 rounded-lg px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="flex-1 rounded-lg px-2 py-1 text-sm outline-none"
+                      style={{
+                        background: 'var(--c-surface)',
+                        border: '1px solid var(--c-border)',
+                        color: 'var(--c-text)',
+                      }}
                       autoFocus
                     />
-                    <button type="submit" className="text-xs text-indigo-400 font-semibold px-2">Save</button>
-                    <button type="button" onClick={() => setRenamingId(null)} className="text-xs text-slate-500 px-1">✕</button>
+                    <button
+                      type="submit"
+                      className="text-xs font-semibold px-2"
+                      style={{ color: 'var(--c-brand)' }}
+                    >Save</button>
+                    <button
+                      type="button"
+                      onClick={() => setRenamingId(null)}
+                      className="text-xs px-1"
+                      style={{ color: 'var(--c-text-muted)' }}
+                    >✕</button>
                   </form>
                 ) : (
                   <>
@@ -127,24 +155,33 @@ export default function SessionSwitcher() {
                       onClick={() => { dispatch({ type: 'SET_ACTIVE_SESSION', id: s.id }); close() }}
                     >
                       <div className="flex items-center gap-2">
-                        {s.id === activeSessionId && <span className="text-indigo-400 text-xs">✓</span>}
-                        <span className="text-sm font-medium text-slate-100">{s.name}</span>
+                        {s.id === activeSessionId && (
+                          <span className="text-xs" style={{ color: 'var(--c-brand)' }}>✓</span>
+                        )}
+                        <span className="text-sm font-medium" style={{ color: 'var(--c-text)' }}>{s.name}</span>
                       </div>
-                      <div className="text-xs text-slate-400 mt-0.5">
+                      <div className="text-xs mt-0.5" style={{ color: 'var(--c-text-muted)' }}>
                         {s.entries?.length ?? 0} entries · {new Date(s.createdAt).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}
                       </div>
                     </button>
                     {adminUnlocked && (
                       <>
-                        <button onClick={() => startRename(s)} className="text-xs text-slate-400 active:text-slate-200 px-2 py-1 rounded-lg bg-slate-600">
+                        <button
+                          onClick={() => startRename(s)}
+                          className="text-xs px-2 py-1 rounded-lg active:opacity-70"
+                          style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text-muted)' }}
+                        >
                           Rename
                         </button>
                         {sessions.length > 1 && (
                           <button
                             onClick={() => deleteSession(s.id)}
-                            className={`text-xs px-2 py-1 rounded-lg ${
-                              deleteConfirm === s.id ? 'text-red-300 bg-red-900/50' : 'text-slate-400 bg-slate-600'
-                            } active:text-red-200`}
+                            className="text-xs px-2 py-1 rounded-lg active:opacity-70"
+                            style={
+                              deleteConfirm === s.id
+                                ? { background: 'rgba(239,68,68,0.12)', color: 'var(--c-danger)', border: '1px solid rgba(239,68,68,0.3)' }
+                                : { background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text-muted)' }
+                            }
                           >
                             {deleteConfirm === s.id ? 'Sure?' : '✕'}
                           </button>

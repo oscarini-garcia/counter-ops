@@ -62,18 +62,28 @@ export default function ProfileModal() {
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60" onClick={close}>
       <div
-        className="bg-slate-800 rounded-t-3xl w-full max-w-lg p-6 pb-safe"
-        style={{ paddingBottom: 'calc(1.5rem + var(--safe-bottom))' }}
+        className="rounded-t-3xl w-full max-w-lg p-6"
+        style={{
+          background: 'var(--c-surface)',
+          paddingBottom: 'calc(1.5rem + var(--safe-bottom))',
+        }}
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-slate-100">Your Profile</h2>
-          <button onClick={close} className="text-slate-400 text-xl w-8 h-8 flex items-center justify-center">✕</button>
+          <h2 className="text-lg font-bold" style={{ color: 'var(--c-text)' }}>Your Profile</h2>
+          <button
+            onClick={close}
+            className="text-xl w-8 h-8 flex items-center justify-center"
+            style={{ color: 'var(--c-text-muted)' }}
+          >✕</button>
         </div>
 
         {/* Avatar */}
         <div className="flex flex-col items-center mb-5 gap-3">
-          <div className="w-20 h-20 rounded-3xl overflow-hidden bg-indigo-600 flex items-center justify-center text-3xl font-bold text-white">
+          <div
+            className="w-20 h-20 rounded-3xl overflow-hidden flex items-center justify-center text-3xl font-bold text-white"
+            style={{ background: 'var(--c-brand)' }}
+          >
             {avatarPreview
               ? <img src={avatarPreview} alt="avatar" className="w-full h-full object-cover" />
               : initials
@@ -83,7 +93,8 @@ export default function ProfileModal() {
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={compressing}
-            className="text-sm text-indigo-400 active:text-indigo-300"
+            className="text-sm active:opacity-70"
+            style={{ color: 'var(--c-brand)' }}
           >
             {compressing ? '⏳ Compressing…' : '📷 Change photo'}
           </button>
@@ -99,19 +110,28 @@ export default function ProfileModal() {
 
         {/* Name */}
         <div className="mb-5">
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Display name</label>
+          <label
+            className="text-xs font-semibold uppercase tracking-wider block mb-1.5"
+            style={{ color: 'var(--c-text-muted)' }}
+          >Display name</label>
           <input
             type="text"
             value={name}
             onChange={e => setName(e.target.value)}
-            className="w-full bg-slate-700 text-slate-100 rounded-xl px-3 py-3 text-base outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full rounded-xl px-3 py-3 text-base outline-none"
+            style={{
+              background: 'var(--c-surface-2)',
+              border: '1.5px solid var(--c-border)',
+              color: 'var(--c-text)',
+            }}
           />
         </div>
 
         <button
           onClick={handleSave}
           disabled={compressing}
-          className="w-full bg-indigo-500 text-white font-semibold py-3.5 rounded-2xl text-base disabled:opacity-40 active:bg-indigo-600"
+          className="w-full font-semibold py-3.5 rounded-2xl text-base disabled:opacity-40 active:opacity-80"
+          style={{ background: 'var(--c-brand)', color: '#fff' }}
         >
           Save
         </button>
