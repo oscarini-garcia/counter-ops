@@ -64,28 +64,7 @@ export default function AppShell({ children }) {
       {/* Offline banner */}
       <OfflineBanner />
 
-      {/* No session state */}
-      {sessions.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
-          <div className="text-5xl">🏖️</div>
-          <h2 className="text-xl font-bold text-slate-100">No sessions yet</h2>
-          {adminUnlocked ? (
-            <>
-              <p className="text-slate-400 text-sm">Create a session to start tracking.</p>
-              <button
-                onClick={openSwitcher}
-                className="bg-indigo-500 text-white px-6 py-3 rounded-2xl font-semibold active:bg-indigo-600"
-              >
-                + Create session
-              </button>
-            </>
-          ) : (
-            <p className="text-slate-400 text-sm">Ask the admin to set up a session.</p>
-          )}
-        </div>
-      ) : (
-        <main className="flex-1 overflow-y-auto">{children}</main>
-      )}
+      <main className="flex-1 overflow-y-auto">{children}</main>
 
       {/* Bottom nav */}
       <nav

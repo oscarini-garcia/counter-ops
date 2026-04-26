@@ -4,6 +4,16 @@ Each entry covers what shipped in that version and the specific files and decisi
 
 ---
 
+### v1.2.1 — 2026-04-26 — Fix nav buttons on empty app
+
+**1. AppShell gating removed**
+`AppShell.jsx` was wrapping `{children}` in a `sessions.length === 0` guard, so the ScreenRouter never rendered when there were no sessions. Nav buttons fired `SET_ACTIVE_SCREEN` into the store but nothing visible changed — the screen area was locked to the "No sessions yet" message. Removed the guard; `<main>` now always renders children.
+
+**2. Empty-state moved to HomeScreen**
+`HomeScreen.jsx` now owns the no-sessions UI (previously in AppShell). Non-admin path shows a "Go to Settings" button so a fresh user can unlock admin → create a session without being stuck. Admin path shows "Create session" button that opens the SessionSwitcher directly.
+
+---
+
 ### v1.2.0 — 2026-04-26 — Sessions, admin CRUD, sync debug, member link fix
 
 **1. Sessions architecture**

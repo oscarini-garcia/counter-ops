@@ -7,7 +7,7 @@ import UndoToast from '../components/UndoToast.jsx'
 import { getChampion, getDonkey, getStreaks } from '../lib/gamification.js'
 
 export default function HomeScreen() {
-  const { counters, members, entries } = useStore()
+  const { counters, members, entries, sessions, adminUnlocked } = useStore()
   const { memberId } = useMember()
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -21,6 +21,37 @@ export default function HomeScreen() {
   function handleQuickAdd(counterId) {
     dispatch({ type: 'ADD_ENTRY', memberId, counterId, qty: 1 })
     window.dispatchEvent(new CustomEvent('counter-ops:sync'))
+  }
+
+  // No sessions yet — show setup prompt
+  if (sessions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 px-6 text-center">
+        <div className="text-5xl">🏖️</div>
+        <h2 className="text-xl font-bold text-slate-100">No sessions yet</h2>
+        {adminUnlocked ? (
+          <>
+            <p className="text-slate-400 text-sm">Create a session to start tracking.</p>
+            <button
+              onClick={() => dispatch({ type: 'SET_SESSION_SWITCHER', open: true })}
+              className="bg-indigo-500 text-white px-6 py-3 rounded-2xl font-semibold active:bg-indigo-600"
+            >
+              + Create session
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="text-slate-400 text-sm">Go to Settings to unlock admin, then create a session.</p>
+            <button
+              onClick={() => navigate('settings')}
+              className="bg-slate-700 text-slate-200 px-6 py-3 rounded-2xl font-semibold active:bg-slate-600"
+            >
+              ⚙️ Settings
+            </button>
+          </>
+        )}
+      </div>
+    )
   }
 
   if (!memberId) {
