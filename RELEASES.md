@@ -4,6 +4,16 @@ Each entry covers what shipped in that version and the specific files and decisi
 
 ---
 
+### v1.1.3 — 2026-04-26 — Fix navigation
+
+**1. ScreenRouter re-renders on navigation**
+`App.jsx` `ScreenRouter` was reading `window.location.search` directly on render. `history.pushState` (called by `useNavigate`) does not trigger a React re-render, so tapping nav buttons updated the URL but the screen never changed. Fixed by reading `activeScreen` from `StoreContext` instead — store dispatch causes the re-render. Added `useStore` to the import in `App.jsx`.
+
+**2. Stray dispatch assignment in AppShell**
+`AppShell.jsx` had `const dispatch = useStore()` which assigned the state object (not a dispatch function) to `dispatch`. Removed — `openProfile` already uses a custom event and never needed it.
+
+---
+
 ### v1.1.2 — 2026-04-26 — Fix blank screen on GitHub Pages
 
 **1. vite.config.js base path**

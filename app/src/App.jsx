@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react'
-import { StoreProvider } from './hooks/useStore.jsx'
+import { StoreProvider, useStore } from './hooks/useStore.jsx'
 import AppShell from './components/AppShell.jsx'
 import ProfileModal from './components/ProfileModal.jsx'
 import ConfettiOverlay from './components/ConfettiOverlay.jsx'
@@ -14,8 +14,9 @@ const AdminScreen = lazy(() => import('./screens/AdminScreen.jsx'))
 const SettingsScreen = lazy(() => import('./screens/SettingsScreen.jsx'))
 
 function ScreenRouter() {
+  const { activeScreen } = useStore()
   const params = new URLSearchParams(window.location.search)
-  const screen = params.get('screen') || 'home'
+  const screen = activeScreen || params.get('screen') || 'home'
   const member = params.get('member') || ''
   const key = params.get('key') || ''
 

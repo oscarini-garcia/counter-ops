@@ -15,7 +15,6 @@ export default function AppShell({ children }) {
   const { activeScreen, syncStatus } = useStore()
   const { memberId, member } = useMember()
   const navigate = useNavigate()
-  const dispatch = useStore()
 
   function openProfile() {
     // dispatch is from useDispatch, but we read store here — trigger via event
