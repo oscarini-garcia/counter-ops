@@ -81,7 +81,10 @@ function reducer(state, action) {
       break
 
     case 'REMOVE_MEMBER':
-      next = updateActive(state, s => ({ members: s.members.filter(m => m.id !== action.id) }))
+      next = updateActive(state, s => ({
+        members: s.members.filter(m => m.id !== action.id),
+        deletedMemberIds: Array.from(new Set([...(s.deletedMemberIds ?? []), action.id])),
+      }))
       break
 
     // Rename member ID + migrate all entries pointing to oldId
@@ -114,7 +117,10 @@ function reducer(state, action) {
       break
 
     case 'REMOVE_COUNTER':
-      next = updateActive(state, s => ({ counters: s.counters.filter(c => c.id !== action.id) }))
+      next = updateActive(state, s => ({
+        counters: s.counters.filter(c => c.id !== action.id),
+        deletedCounterIds: Array.from(new Set([...(s.deletedCounterIds ?? []), action.id])),
+      }))
       break
 
     case 'REORDER_COUNTERS':

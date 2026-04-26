@@ -8,6 +8,8 @@ export const EMPTY_SESSION = {
   counters: [],
   entries: [],
   milestonesFired: [],
+  deletedMemberIds: [],
+  deletedCounterIds: [],
 }
 
 export const EMPTY_STORE = {
@@ -60,19 +62,25 @@ export function mergeEntries(local = [], remote = []) {
   return Array.from(map.values()).sort((a, b) => a.timestamp.localeCompare(b.timestamp))
 }
 
-export function mergeMembers(local = [], remote = []) {
+export function mergeMembers(local = [], remote = [], deletedIds = []) {
+  const deleted = new Set(deletedIds)
   const map = new Map(local.map(m => [m.id, m]))
   for (const m of remote) {
+    if (deleted.has(m.id)) continue                          // tombstone wins
     if (!map.has(m.id)) map.set(m.id, m)
     else if (!map.get(m.id).avatar && m.avatar) map.set(m.id, { ...map.get(m.id), avatar: m.avatar })
   }
-  return Array.from(map.values())
+  return Array.from(map.values()).filter(m => !deleted.has(m.id))
 }
 
-export function mergeCounters(local = [], remote = []) {
+export function mergeCounters(local = [], remote = [], deletedIds = []) {
+  const deleted = new Set(deletedIds)
   const map = new Map(local.map(c => [c.id, c]))
-  for (const c of remote) { if (!map.has(c.id)) map.set(c.id, c) }
-  return Array.from(map.values())
+  for (const c of remote) {
+    if (deleted.has(c.id)) continue                          // tombstone wins
+    if (!map.has(c.id)) map.set(c.id, c)
+  }
+  return Array.from(map.values()).filter(c => !deleted.has(c.id))
 }
 
 export function mergeSessions(local = [], remote = []) {
@@ -80,13 +88,18 @@ export function mergeSessions(local = [], remote = []) {
   for (const rs of remote) {
     if (map.has(rs.id)) {
       const ls = map.get(rs.id)
+      // Union tombstone lists so deletes propagate across devices
+      const deletedMemberIds = Array.from(new Set([...(ls.deletedMemberIds ?? []), ...(rs.deletedMemberIds ?? [])]))
+      const deletedCounterIds = Array.from(new Set([...(ls.deletedCounterIds ?? []), ...(rs.deletedCounterIds ?? [])]))
       map.set(rs.id, {
         ...rs,
         name: ls.name,        // local name wins
-        members: mergeMembers(ls.members, rs.members),
-        counters: mergeCounters(ls.counters, rs.counters),
+        members: mergeMembers(ls.members, rs.members, deletedMemberIds),
+        counters: mergeCounters(ls.counters, rs.counters, deletedCounterIds),
         entries: mergeEntries(ls.entries, rs.entries),
         milestonesFired: Array.from(new Set([...(ls.milestonesFired ?? []), ...(rs.milestonesFired ?? [])])),
+        deletedMemberIds,
+        deletedCounterIds,
       })
     } else {
       map.set(rs.id, rs)

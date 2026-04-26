@@ -130,13 +130,11 @@ export default function AdminScreen() {
 
   function confirmDelete(type, id) {
     if (deleteConfirm?.type === type && deleteConfirm?.id === id) {
-      // Second tap — confirm
       dispatch({ type: type === 'counter' ? 'REMOVE_COUNTER' : 'REMOVE_MEMBER', id })
       setDeleteConfirm(null)
       window.dispatchEvent(new CustomEvent('counter-ops:sync'))
     } else {
       setDeleteConfirm({ type, id })
-      setTimeout(() => setDeleteConfirm(null), 3000)
     }
   }
 
@@ -164,6 +162,14 @@ export default function AdminScreen() {
                     onCancel={() => setEditingCounter(null)}
                   />
                 </div>
+              ) : deleteConfirm?.type === 'counter' && deleteConfirm?.id === c.id ? (
+                <div className="bg-red-900/40 border border-red-700/50 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                  <span className="text-sm text-red-200">Delete <strong>{c.label}</strong>?</span>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button onClick={() => setDeleteConfirm(null)} className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 text-slate-200">Cancel</button>
+                    <button onClick={() => confirmDelete('counter', c.id)} className="text-xs px-3 py-1.5 rounded-lg bg-red-600 text-white font-semibold">Delete</button>
+                  </div>
+                </div>
               ) : (
                 <SortableRow
                   index={i}
@@ -177,9 +183,6 @@ export default function AdminScreen() {
                     <span className="text-xl">{c.emoji}</span>
                     <span className="text-sm font-medium text-slate-100">{c.label}</span>
                   </div>
-                  {deleteConfirm?.type === 'counter' && deleteConfirm?.id === c.id && (
-                    <p className="text-xs text-red-400 mt-0.5">Tap ✕ again to confirm delete</p>
-                  )}
                 </SortableRow>
               )}
             </div>
@@ -252,6 +255,14 @@ export default function AdminScreen() {
                       </div>
                     )}
                   </div>
+                ) : deleteConfirm?.type === 'member' && deleteConfirm?.id === m.id ? (
+                  <div className="bg-red-900/40 border border-red-700/50 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                    <span className="text-sm text-red-200">Delete <strong>{m.name}</strong>?</span>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <button onClick={() => setDeleteConfirm(null)} className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 text-slate-200">Cancel</button>
+                      <button onClick={() => confirmDelete('member', m.id)} className="text-xs px-3 py-1.5 rounded-lg bg-red-600 text-white font-semibold">Delete</button>
+                    </div>
+                  </div>
                 ) : (
                   <SortableRow
                     index={i}
@@ -266,9 +277,6 @@ export default function AdminScreen() {
                       <span className={`text-xs ml-2 font-mono ${idMismatch ? 'text-amber-400' : 'text-slate-500'}`}>{m.id}</span>
                       {idMismatch && <span className="text-xs text-amber-400 ml-1">⚠️</span>}
                     </div>
-                    {deleteConfirm?.type === 'member' && deleteConfirm?.id === m.id && (
-                      <p className="text-xs text-red-400 mt-0.5">Tap ✕ again to confirm delete</p>
-                    )}
                   </SortableRow>
                 )}
               </div>
