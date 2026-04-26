@@ -106,7 +106,7 @@ export default function AdminScreen() {
   const [deleteConfirm, setDeleteConfirm] = useState(null)   // { type, id }
   const [deleteEntryConfirm, setDeleteEntryConfirm] = useState(null) // entry id
 
-  const baseUrl = window.location.origin + window.location.pathname.replace(/\/$/, '')
+  const baseUrl = window.location.origin + import.meta.env.BASE_URL.replace(/\/$/, '')
 
   function addCounter(e) {
     e.preventDefault()
