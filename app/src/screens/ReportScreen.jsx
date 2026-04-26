@@ -34,7 +34,7 @@ export default function ReportScreen() {
     return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
   })()
 
-  const counterTotals = counters.filter(c => !c.archived).map(c => ({
+  const counterTotals = counters.map(c => ({
     counter: c,
     total: entries.filter(e => e.counter === c.id).reduce((s, e) => s + (e.qty || 1), 0)
   })).sort((a, b) => b.total - a.total)
@@ -70,7 +70,7 @@ export default function ReportScreen() {
             className="bg-slate-700 text-slate-200 text-xs rounded-lg px-2 py-1 outline-none"
           >
             <option value="">All counters</option>
-            {counters.filter(c => !c.archived).map(c => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
+            {counters.map(c => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
           </select>
         </div>
         <div className="flex flex-col gap-2">

@@ -5,6 +5,7 @@ import ProfileModal from './components/ProfileModal.jsx'
 import ConfettiOverlay from './components/ConfettiOverlay.jsx'
 import TauntToast from './components/TauntToast.jsx'
 import SyncBootstrap from './components/SyncBootstrap.jsx'
+import SessionSwitcher from './components/SessionSwitcher.jsx'
 
 const HomeScreen = lazy(() => import('./screens/HomeScreen.jsx'))
 const LogEntryScreen = lazy(() => import('./screens/LogEntryScreen.jsx'))
@@ -14,25 +15,18 @@ const AdminScreen = lazy(() => import('./screens/AdminScreen.jsx'))
 const SettingsScreen = lazy(() => import('./screens/SettingsScreen.jsx'))
 
 function ScreenRouter() {
-  const { activeScreen } = useStore()
-  const params = new URLSearchParams(window.location.search)
-  const screen = activeScreen || params.get('screen') || 'home'
-  const member = params.get('member') || ''
-  const key = params.get('key') || ''
-
-  const adminKey = import.meta.env.VITE_ADMIN_KEY || 'admin'
-  const isAdmin = member === 'admin' && key === adminKey
+  const { activeScreen, adminUnlocked } = useStore()
 
   const screens = {
     home: <HomeScreen />,
     log: <LogEntryScreen />,
     entries: <EntryLogScreen />,
     report: <ReportScreen />,
-    admin: isAdmin ? <AdminScreen /> : <HomeScreen />,
+    admin: adminUnlocked ? <AdminScreen /> : <HomeScreen />,
     settings: <SettingsScreen />,
   }
 
-  return screens[screen] ?? <HomeScreen />
+  return screens[activeScreen] ?? <HomeScreen />
 }
 
 export default function App() {
@@ -45,6 +39,7 @@ export default function App() {
         </Suspense>
       </AppShell>
       <ProfileModal />
+      <SessionSwitcher />
       <ConfettiOverlay />
       <TauntToast />
     </StoreProvider>

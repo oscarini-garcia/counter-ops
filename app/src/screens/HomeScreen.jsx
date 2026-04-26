@@ -16,7 +16,7 @@ export default function HomeScreen() {
   const donkey = getDonkey(entries, members)
   const streaks = getStreaks(entries)
 
-  const activeCounters = counters.filter(c => !c.archived)
+  const activeCounters = counters
 
   function handleQuickAdd(counterId) {
     dispatch({ type: 'ADD_ENTRY', memberId, counterId, qty: 1 })

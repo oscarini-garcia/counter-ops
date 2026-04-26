@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useStore, useDispatch } from './useStore.jsx'
 import { syncCycle } from '../lib/sync.js'
-import { saveRetryQueue, loadRetryQueue } from '../lib/storage.js'
 
 export function useSync() {
   const state = useStore()
@@ -13,34 +12,40 @@ export function useSync() {
     if (!navigator.onLine) return
     syncing.current = true
     dispatch({ type: 'SET_SYNC_STATUS', status: 'syncing' })
-    dispatch({ type: 'ADD_SYNC_LOG', entry: { status: 'started' } })
+    const binId = import.meta.env.VITE_JSONBIN_ID
+    const key = import.meta.env.VITE_JSONBIN_KEY
+    dispatch({ type: 'ADD_SYNC_LOG', entry: {
+      status: 'started',
+      binId: binId || '(not set)',
+      keyPreview: key ? `${key.slice(0, 10)}…${key.slice(-4)} (${key.length} chars)` : '(not set)',
+    }})
     try {
       const merged = await syncCycle(state)
       dispatch({ type: 'MERGE_REMOTE', data: merged })
       dispatch({ type: 'SET_SYNC_STATUS', status: 'synced', ts: new Date().toISOString() })
       dispatch({ type: 'ADD_SYNC_LOG', entry: { status: 'ok' } })
-      saveRetryQueue([])
     } catch (err) {
       dispatch({ type: 'SET_SYNC_STATUS', status: 'pending' })
-      dispatch({ type: 'ADD_SYNC_LOG', entry: { status: 'error', message: err.message } })
+      dispatch({ type: 'ADD_SYNC_LOG', entry: {
+        status: 'error',
+        message: err.message,
+        httpStatus: err.status ?? null,
+        responseBody: err.responseBody ?? null,
+        payloadBytes: err.payloadBytes ?? null,
+      }})
     } finally {
       syncing.current = false
     }
   }
 
-  // Pull on mount
-  useEffect(() => {
-    doSync()
-  }, [])
+  useEffect(() => { doSync() }, [])
 
-  // Listen for manual sync trigger
   useEffect(() => {
     const handler = () => doSync()
     window.addEventListener('counter-ops:sync', handler)
     return () => window.removeEventListener('counter-ops:sync', handler)
   }, [state])
 
-  // Sync when coming back online
   useEffect(() => {
     window.addEventListener('online', doSync)
     return () => window.removeEventListener('online', doSync)

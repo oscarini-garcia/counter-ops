@@ -28,8 +28,8 @@ The **⚠️ Sync** button in the header forces an immediate push + pull if you 
 | **Log** | Full entry form — who, what, how many, location (GPS), optional note. |
 | **Entries** | Chronological log of all entries, filterable by member or counter. |
 | **Report** | Leaderboard, timeline chart, map, trip summary card, awards. |
-| **Admin** | Create counters, add members, generate links + QR codes. `?member=admin&key=…` |
-| **Settings** | Session name, force app refresh, sync log, reset local data. |
+| **Admin** | Create counters, add members, generate QR links. Unlocked via password in Settings. |
+| **Settings** | Admin password unlock, sync debug log (bin ID, key preview, HTTP status), force refresh, reset. |
 
 ### Location
 
@@ -50,6 +50,7 @@ GPS fires automatically when you open the Log screen. If it times out (5 seconds
 
 | Version | Date | Summary |
 |---|---|---|
+| 1.2.0 | 2026-04-26 | Sessions, admin CRUD with reorder, sync debug log, member link fix for accented names |
 | 1.1.3 | 2026-04-26 | Fix navigation — buttons now switch screens correctly |
 | 1.1.2 | 2026-04-26 | Fix blank screen — move base path inside defineConfig and fix PWA start_url |
 | 1.1.1 | 2026-04-26 | Fix asset paths for GitHub Pages subpath deployment |

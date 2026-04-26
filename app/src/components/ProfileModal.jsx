@@ -73,7 +73,7 @@ export default function ProfileModal() {
 
         {/* Avatar */}
         <div className="flex flex-col items-center mb-5 gap-3">
-          <div className="w-20 h-20 rounded-full overflow-hidden bg-indigo-600 flex items-center justify-center text-3xl font-bold text-white">
+          <div className="w-20 h-20 rounded-3xl overflow-hidden bg-indigo-600 flex items-center justify-center text-3xl font-bold text-white">
             {avatarPreview
               ? <img src={avatarPreview} alt="avatar" className="w-full h-full object-cover" />
               : initials

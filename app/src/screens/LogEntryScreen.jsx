@@ -21,7 +21,7 @@ export default function LogEntryScreen() {
   const resolvedLocation = manualLocation ?? (gpsStatus === 'resolved' ? location : null)
   const showFallback = gpsStatus === 'timeout' || gpsStatus === 'denied'
 
-  const activeCounters = counters.filter(c => !c.archived)
+  const activeCounters = counters
 
   // Pre-select counter from URL param (e.g. quick-log from another screen)
   useEffect(() => {

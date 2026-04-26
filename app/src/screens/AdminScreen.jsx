@@ -2,32 +2,109 @@ import React, { useState } from 'react'
 import { useStore, useDispatch } from '../hooks/useStore.jsx'
 import QRCodeCard from '../components/QRCodeCard.jsx'
 
-const EMOJI_SUGGESTIONS = ['🍦','🍹','🧊','🍺','🍕','🌮','☕','🍰','🎾','🏊','🚶','🧴']
-
 function slugify(str) {
-  return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || Date.now().toString()
+  return str
+    .normalize('NFD')                    // decompose é → e + combining accent
+    .replace(/[̀-ͯ]/g, '')     // strip combining diacritics (accents)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '') || Date.now().toString()
 }
 
 function suggestEmoji(label) {
-  const lower = label.toLowerCase()
-  if (lower.includes('ice') || lower.includes('cream') || lower.includes('granit')) return '🍦'
-  if (lower.includes('pomada') || lower.includes('drink') || lower.includes('cocktail')) return '🍹'
-  if (lower.includes('beer') || lower.includes('cerve')) return '🍺'
-  if (lower.includes('coffee') || lower.includes('café')) return '☕'
-  if (lower.includes('pizza')) return '🍕'
-  if (lower.includes('swim') || lower.includes('pool')) return '🏊'
-  return EMOJI_SUGGESTIONS[Math.floor(Math.random() * EMOJI_SUGGESTIONS.length)]
+  const l = label.toLowerCase()
+  if (l.includes('ice') || l.includes('cream') || l.includes('granit')) return '🍦'
+  if (l.includes('pomada') || l.includes('cocktail')) return '🍹'
+  if (l.includes('beer') || l.includes('cerve')) return '🍺'
+  if (l.includes('coffee') || l.includes('café')) return '☕'
+  if (l.includes('pizza')) return '🍕'
+  if (l.includes('swim') || l.includes('pool')) return '🏊'
+  if (l.includes('walk') || l.includes('hike')) return '🚶'
+  return '🎯'
+}
+
+// Reusable row with up/down/edit/delete controls
+function SortableRow({ item, index, total, onUp, onDown, onEdit, onDelete, children }) {
+  return (
+    <div className="flex items-center gap-2 bg-slate-800 rounded-xl px-3 py-2.5">
+      {/* Reorder */}
+      <div className="flex flex-col gap-0.5">
+        <button
+          onClick={onUp}
+          disabled={index === 0}
+          className="text-slate-500 disabled:opacity-20 active:text-slate-200 leading-none text-sm"
+        >▲</button>
+        <button
+          onClick={onDown}
+          disabled={index === total - 1}
+          className="text-slate-500 disabled:opacity-20 active:text-slate-200 leading-none text-sm"
+        >▼</button>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        {children}
+      </div>
+
+      {/* Edit / Delete */}
+      <div className="flex gap-1 flex-shrink-0">
+        <button
+          onClick={onEdit}
+          className="text-xs text-slate-400 active:text-slate-100 px-2 py-1 rounded-lg bg-slate-700"
+        >Edit</button>
+        <button
+          onClick={onDelete}
+          className="text-xs text-red-400 active:text-red-200 px-2 py-1 rounded-lg bg-slate-700"
+        >✕</button>
+      </div>
+    </div>
+  )
+}
+
+// Inline edit form
+function EditForm({ label: initLabel, emoji: initEmoji, showEmoji, onSave, onCancel }) {
+  const [label, setLabel] = useState(initLabel)
+  const [emoji, setEmoji] = useState(initEmoji || '')
+  return (
+    <form
+      onSubmit={e => { e.preventDefault(); onSave(label.trim(), emoji.trim()) }}
+      className="flex gap-2 items-center"
+    >
+      {showEmoji && (
+        <input
+          type="text"
+          value={emoji}
+          onChange={e => setEmoji(e.target.value)}
+          className="w-10 bg-slate-600 text-slate-100 rounded-lg px-1 py-1.5 text-center text-sm outline-none"
+          maxLength={2}
+        />
+      )}
+      <input
+        type="text"
+        value={label}
+        onChange={e => setLabel(e.target.value)}
+        className="flex-1 bg-slate-600 text-slate-100 rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500"
+        autoFocus
+      />
+      <button type="submit" className="text-xs text-indigo-400 px-2 py-1 font-semibold">Save</button>
+      <button type="button" onClick={onCancel} className="text-xs text-slate-500 px-2 py-1">✕</button>
+    </form>
+  )
 }
 
 export default function AdminScreen() {
-  const { counters, members, session } = useStore()
+  const { counters, members } = useStore()
   const dispatch = useDispatch()
 
   const [newCounterLabel, setNewCounterLabel] = useState('')
   const [newCounterEmoji, setNewCounterEmoji] = useState('')
   const [newMemberName, setNewMemberName] = useState('')
+  const [editingCounter, setEditingCounter] = useState(null) // id
+  const [editingMember, setEditingMember] = useState(null)   // id
+  const [showQR, setShowQR] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)   // { type, id }
 
-  const baseUrl = window.location.origin + window.location.pathname
+  const baseUrl = window.location.origin + window.location.pathname.replace(/\/$/, '')
 
   function addCounter(e) {
     e.preventDefault()
@@ -35,7 +112,7 @@ export default function AdminScreen() {
     const label = newCounterLabel.trim()
     dispatch({
       type: 'UPSERT_COUNTER',
-      counter: { id: slugify(label), label, emoji: newCounterEmoji || suggestEmoji(label) }
+      counter: { id: slugify(label), label, emoji: newCounterEmoji.trim() || suggestEmoji(label) }
     })
     setNewCounterLabel('')
     setNewCounterEmoji('')
@@ -51,38 +128,65 @@ export default function AdminScreen() {
     window.dispatchEvent(new CustomEvent('counter-ops:sync'))
   }
 
+  function confirmDelete(type, id) {
+    if (deleteConfirm?.type === type && deleteConfirm?.id === id) {
+      // Second tap — confirm
+      dispatch({ type: type === 'counter' ? 'REMOVE_COUNTER' : 'REMOVE_MEMBER', id })
+      setDeleteConfirm(null)
+      window.dispatchEvent(new CustomEvent('counter-ops:sync'))
+    } else {
+      setDeleteConfirm({ type, id })
+      setTimeout(() => setDeleteConfirm(null), 3000)
+    }
+  }
+
   return (
     <div className="px-4 py-4 flex flex-col gap-6 max-w-lg mx-auto pb-8">
       <h1 className="text-lg font-bold text-slate-100">⚙️ Admin</h1>
 
-      {/* Session */}
-      <div>
-        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Session name</label>
-        <input
-          type="text"
-          value={session}
-          onChange={e => dispatch({ type: 'SET_SESSION', session: e.target.value })}
-          className="w-full bg-slate-700 text-slate-100 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-        />
-      </div>
-
-      {/* Counters */}
+      {/* ── COUNTERS ── */}
       <div>
         <h2 className="text-sm font-semibold text-slate-300 mb-3">Counters</h2>
         <div className="flex flex-col gap-1.5 mb-3">
-          {counters.map(c => (
-            <div key={c.id} className={`flex items-center gap-3 bg-slate-800 rounded-xl px-3 py-2.5 ${c.archived ? 'opacity-40' : ''}`}>
-              <span className="text-xl">{c.emoji}</span>
-              <span className="flex-1 text-slate-100">{c.label}</span>
-              <button
-                onClick={() => dispatch({ type: c.archived ? 'UPSERT_COUNTER' : 'ARCHIVE_COUNTER', id: c.id, counter: { ...c, archived: !c.archived } })}
-                className="text-xs text-slate-500 active:text-slate-300"
-              >
-                {c.archived ? 'Restore' : 'Archive'}
-              </button>
+          {counters.map((c, i) => (
+            <div key={c.id}>
+              {editingCounter === c.id ? (
+                <div className="bg-slate-800 rounded-xl px-3 py-2.5">
+                  <EditForm
+                    label={c.label}
+                    emoji={c.emoji}
+                    showEmoji
+                    onSave={(label, emoji) => {
+                      dispatch({ type: 'UPSERT_COUNTER', counter: { ...c, label, emoji: emoji || suggestEmoji(label) } })
+                      setEditingCounter(null)
+                      window.dispatchEvent(new CustomEvent('counter-ops:sync'))
+                    }}
+                    onCancel={() => setEditingCounter(null)}
+                  />
+                </div>
+              ) : (
+                <SortableRow
+                  index={i}
+                  total={counters.length}
+                  onUp={() => dispatch({ type: 'REORDER_COUNTERS', from: i, to: i - 1 })}
+                  onDown={() => dispatch({ type: 'REORDER_COUNTERS', from: i, to: i + 1 })}
+                  onEdit={() => setEditingCounter(c.id)}
+                  onDelete={() => confirmDelete('counter', c.id)}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{c.emoji}</span>
+                    <span className="text-sm font-medium text-slate-100">{c.label}</span>
+                  </div>
+                  {deleteConfirm?.type === 'counter' && deleteConfirm?.id === c.id && (
+                    <p className="text-xs text-red-400 mt-0.5">Tap ✕ again to confirm delete</p>
+                  )}
+                </SortableRow>
+              )}
             </div>
           ))}
         </div>
+
+        {/* Add counter */}
         <form onSubmit={addCounter} className="flex gap-2">
           <input
             type="text"
@@ -95,25 +199,84 @@ export default function AdminScreen() {
           <input
             type="text"
             value={newCounterLabel}
-            onChange={e => { setNewCounterLabel(e.target.value); if (!newCounterEmoji) setNewCounterEmoji(suggestEmoji(e.target.value)) }}
+            onChange={e => {
+              setNewCounterLabel(e.target.value)
+              if (!newCounterEmoji) setNewCounterEmoji(suggestEmoji(e.target.value))
+            }}
             placeholder="Counter name"
             className="flex-1 bg-slate-700 text-slate-100 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
           />
-          <button type="submit" className="bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-semibold active:bg-indigo-600">Add</button>
+          <button type="submit" className="bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-semibold active:bg-indigo-600">
+            Add
+          </button>
         </form>
       </div>
 
-      {/* Members */}
+      {/* ── MEMBERS ── */}
       <div>
-        <h2 className="text-sm font-semibold text-slate-300 mb-3">Members</h2>
+        <h2 className="text-sm font-semibold text-slate-300 mb-3">Family members</h2>
         <div className="flex flex-col gap-1.5 mb-3">
-          {members.map(m => (
-            <div key={m.id} className="flex items-center gap-3 bg-slate-800 rounded-xl px-3 py-2.5">
-              <span className="flex-1 text-slate-100">{m.name}</span>
-              <span className="text-xs text-slate-500 font-mono">{m.id}</span>
-            </div>
-          ))}
+          {members.map((m, i) => {
+            const expectedId = slugify(m.name)
+            const idMismatch = m.id !== expectedId
+            return (
+              <div key={m.id}>
+                {editingMember === m.id ? (
+                  <div className="bg-slate-800 rounded-xl px-3 py-2.5 flex flex-col gap-2">
+                    <EditForm
+                      label={m.name}
+                      showEmoji={false}
+                      onSave={(name) => {
+                        dispatch({ type: 'UPSERT_MEMBER', member: { ...m, name } })
+                        setEditingMember(null)
+                        window.dispatchEvent(new CustomEvent('counter-ops:sync'))
+                      }}
+                      onCancel={() => setEditingMember(null)}
+                    />
+                    {idMismatch && (
+                      <div className="flex items-center gap-2 pt-1 border-t border-slate-700">
+                        <span className="text-xs text-amber-400 flex-1">
+                          Link ID is <span className="font-mono">{m.id}</span> — fix to <span className="font-mono">{expectedId}</span>?
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            dispatch({ type: 'FIX_MEMBER_ID', oldId: m.id, newId: expectedId })
+                            setEditingMember(null)
+                            window.dispatchEvent(new CustomEvent('counter-ops:sync'))
+                          }}
+                          className="text-xs bg-amber-600 text-white px-3 py-1 rounded-lg font-semibold active:bg-amber-700 flex-shrink-0"
+                        >
+                          Fix ID
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <SortableRow
+                    index={i}
+                    total={members.length}
+                    onUp={() => dispatch({ type: 'REORDER_MEMBERS', from: i, to: i - 1 })}
+                    onDown={() => dispatch({ type: 'REORDER_MEMBERS', from: i, to: i + 1 })}
+                    onEdit={() => setEditingMember(m.id)}
+                    onDelete={() => confirmDelete('member', m.id)}
+                  >
+                    <div>
+                      <span className="text-sm font-medium text-slate-100">{m.name}</span>
+                      <span className={`text-xs ml-2 font-mono ${idMismatch ? 'text-amber-400' : 'text-slate-500'}`}>{m.id}</span>
+                      {idMismatch && <span className="text-xs text-amber-400 ml-1">⚠️</span>}
+                    </div>
+                    {deleteConfirm?.type === 'member' && deleteConfirm?.id === m.id && (
+                      <p className="text-xs text-red-400 mt-0.5">Tap ✕ again to confirm delete</p>
+                    )}
+                  </SortableRow>
+                )}
+              </div>
+            )
+          })}
         </div>
+
+        {/* Add member */}
         <form onSubmit={addMember} className="flex gap-2">
           <input
             type="text"
@@ -122,23 +285,33 @@ export default function AdminScreen() {
             placeholder="Member name"
             className="flex-1 bg-slate-700 text-slate-100 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
           />
-          <button type="submit" className="bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-semibold active:bg-indigo-600">Add</button>
+          <button type="submit" className="bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-semibold active:bg-indigo-600">
+            Add
+          </button>
         </form>
       </div>
 
-      {/* QR codes */}
+      {/* ── QR CODES ── */}
       {members.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-slate-300 mb-3">Member Links & QR Codes</h2>
-          <div className="flex flex-col gap-4">
-            {members.map(m => (
-              <QRCodeCard
-                key={m.id}
-                url={`${baseUrl}?member=${m.id}`}
-                label={m.name}
-              />
-            ))}
-          </div>
+          <button
+            onClick={() => setShowQR(q => !q)}
+            className="w-full flex items-center justify-between bg-slate-800 rounded-xl px-4 py-3 text-sm font-medium text-slate-200 active:bg-slate-700"
+          >
+            <span>📲 Member links & QR codes</span>
+            <span className="text-slate-400">{showQR ? '▲' : '▼'}</span>
+          </button>
+          {showQR && (
+            <div className="flex flex-col gap-4 mt-3">
+              {members.map(m => (
+                <QRCodeCard
+                  key={m.id}
+                  url={`${baseUrl}?member=${m.id}`}
+                  label={m.name}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

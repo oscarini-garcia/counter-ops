@@ -1,10 +1,26 @@
 import React, { useState } from 'react'
-import { useStore, useDispatch } from '../hooks/useStore.jsx'
+import { useStore, useDispatch, useNavigate } from '../hooks/useStore.jsx'
 
 export default function SettingsScreen() {
-  const { session, syncLog } = useStore()
+  const { syncLog, adminUnlocked } = useStore()
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [adminKey, setAdminKey] = useState('')
+  const [adminError, setAdminError] = useState(false)
+
+  function tryUnlockAdmin(e) {
+    e.preventDefault()
+    const correct = import.meta.env.VITE_ADMIN_KEY || 'admin'
+    if (adminKey === correct) {
+      dispatch({ type: 'SET_ADMIN_UNLOCKED', value: true })
+      navigate('admin')
+    } else {
+      setAdminError(true)
+      setAdminKey('')
+      setTimeout(() => setAdminError(false), 2000)
+    }
+  }
 
   function forceRefresh() {
     if ('serviceWorker' in navigator) {
@@ -27,15 +43,35 @@ export default function SettingsScreen() {
     <div className="px-4 py-4 flex flex-col gap-5 max-w-lg mx-auto pb-8">
       <h1 className="text-lg font-bold text-slate-100">Settings</h1>
 
-      {/* Session name */}
+      {/* Admin access */}
       <div>
-        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Session name</label>
-        <input
-          type="text"
-          value={session}
-          onChange={e => dispatch({ type: 'SET_SESSION', session: e.target.value })}
-          className="w-full bg-slate-700 text-slate-100 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-        />
+        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Admin</label>
+        {adminUnlocked ? (
+          <button
+            onClick={() => navigate('admin')}
+            className="w-full bg-indigo-500 text-white font-medium py-3 rounded-xl text-sm active:bg-indigo-600"
+          >
+            ⚙️ Open Admin Panel
+          </button>
+        ) : (
+          <form onSubmit={tryUnlockAdmin} className="flex gap-2">
+            <input
+              type="password"
+              value={adminKey}
+              onChange={e => setAdminKey(e.target.value)}
+              placeholder="Admin key"
+              className={`flex-1 bg-slate-700 text-slate-100 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 ${
+                adminError ? 'ring-2 ring-red-500' : 'focus:ring-indigo-500'
+              }`}
+            />
+            <button
+              type="submit"
+              className="bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-semibold active:bg-indigo-600"
+            >
+              {adminError ? '✗' : 'Unlock'}
+            </button>
+          </form>
+        )}
       </div>
 
       {/* Force refresh */}
@@ -54,10 +90,31 @@ export default function SettingsScreen() {
         <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Sync log (last 10)</label>
         <div className="bg-slate-800 rounded-xl overflow-hidden">
           {syncLog?.length ? syncLog.map((entry, i) => (
-            <div key={i} className="flex items-center gap-2 px-3 py-2 border-b border-slate-700 last:border-0">
-              <span className="text-sm">{entry.status === 'ok' ? '✅' : entry.status === 'error' ? '❌' : '🔄'}</span>
-              <span className="text-xs text-slate-400 flex-1 truncate">{entry.message ?? entry.status}</span>
-              <span className="text-xs text-slate-500">{new Date(entry.ts).toLocaleTimeString()}</span>
+            <div key={i} className="px-3 py-2 border-b border-slate-700 last:border-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">{entry.status === 'ok' ? '✅' : entry.status === 'error' ? '❌' : '🔄'}</span>
+                <span className="text-xs text-slate-400 flex-1">{entry.message ?? entry.status}</span>
+                <span className="text-xs text-slate-500 flex-shrink-0">{new Date(entry.ts).toLocaleTimeString()}</span>
+              </div>
+              {(entry.binId || entry.keyPreview || entry.httpStatus || entry.responseBody) && (
+                <div className="mt-1 ml-6 flex flex-col gap-0.5">
+                  {entry.binId && (
+                    <span className="text-xs text-slate-400">Bin: <span className="font-mono">{entry.binId}</span></span>
+                  )}
+                  {entry.keyPreview && (
+                    <span className="text-xs text-slate-400">Key: <span className="font-mono">{entry.keyPreview}</span></span>
+                  )}
+                  {entry.httpStatus && (
+                    <span className="text-xs text-red-400">HTTP {entry.httpStatus}</span>
+                  )}
+                  {entry.payloadBytes != null && (
+                    <span className="text-xs text-slate-500">Payload: {(entry.payloadBytes / 1024).toFixed(1)} KB</span>
+                  )}
+                  {entry.responseBody && (
+                    <span className="text-xs text-slate-500 break-all">{entry.responseBody}</span>
+                  )}
+                </div>
+              )}
             </div>
           )) : (
             <div className="px-3 py-3 text-xs text-slate-500">No sync attempts yet.</div>

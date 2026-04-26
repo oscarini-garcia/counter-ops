@@ -4,6 +4,34 @@ Each entry covers what shipped in that version and the specific files and decisi
 
 ---
 
+### v1.2.0 — 2026-04-26 — Sessions, admin CRUD, sync debug, member link fix
+
+**1. Sessions architecture**
+All data (members, counters, entries) is now scoped to a named session. `lib/storage.js` rewritten: top-level shape is `{ sessions[], activeSessionId }` with `EMPTY_SESSION` constant and `mergeSessions()` + per-session `mergeEntries/Members/Counters()`. `hooks/useStore.jsx` rewritten with `updateActive(state, updater)` helper that scopes every reducer action to the active session. `StoreProvider` computes `activeSession`, `members`, `counters`, `entries` as derived values so no screen needed rewriting. New actions: `CREATE_SESSION`, `SET_ACTIVE_SESSION`, `RENAME_SESSION`, `REMOVE_SESSION`, `SET_SESSION_SWITCHER`. Sessions are admin-only to create.
+
+**2. SessionSwitcher component**
+New `components/SessionSwitcher.jsx` — bottom-sheet portal listing all sessions sorted newest-first. Admin users see Create (inline form), Rename (inline), and Delete (two-tap confirm). Non-admins see read-only list. Mounted in `App.jsx`; opened by tapping the session name in `AppShell` header.
+
+**3. Admin via password form**
+Removed `?member=admin&key=…` URL trick. `SettingsScreen.jsx` now shows a password input that dispatches `SET_ADMIN_UNLOCKED` on correct key match (checked against `VITE_ADMIN_KEY`). `adminUnlocked` is transient state (not persisted). Admin panel, session create/rename/delete, and member/counter management are all gated behind this flag.
+
+**4. Admin CRUD with reorder**
+`AdminScreen.jsx` rewritten: `SortableRow` component with ↑↓ buttons (`REORDER_MEMBERS`, `REORDER_COUNTERS`), inline `EditForm`, two-tap delete confirm. Counters: no archive toggle (removed). Members: new `REMOVE_MEMBER` / `REMOVE_COUNTER` actions in reducer.
+
+**5. Sync debug log**
+`hooks/useSync.js` logs bin ID and key preview (`first10…last4 (N chars)`) at sync start. `lib/sync.js` captures `err.status`, `err.responseBody`, `err.payloadBytes` on failure. `SettingsScreen.jsx` renders last-10 sync entries showing HTTP status, payload KB, and raw response body.
+
+**6. JSONBin `.env` key escaping**
+`VITE_JSONBIN_KEY` values that are bcrypt hashes contain `$WORD` sequences which `dotenv-expand` (used by Vite) silently expands to empty strings, truncating the key from 60 to 39 chars and causing 401s. Fix: write each `$` as `\$` in `.env`. Updated `.env.example` with a comment explaining this. Verified via `vite.loadEnv()` returning 60 chars.
+
+**7. Member link fix for accented names**
+`AdminScreen.jsx` `slugify()` now calls `.normalize('NFD').replace(/[̀-ͯ]/g, '')` before lowercasing, so `García` → `garcia` instead of `garc-a`. New `FIX_MEMBER_ID` reducer action migrates both the member record and all its entries to the corrected ID. Admin UI shows ⚠️ on rows where the current ID doesn't match the expected slug, and a **Fix ID** button inside the edit form.
+
+**8. Rounded-corner rectangle avatars**
+`MemberAvatar.jsx` and `ProfileModal.jsx` changed from `rounded-full` to `rounded-2xl` / `rounded-3xl`.
+
+---
+
 ### v1.1.3 — 2026-04-26 — Fix navigation
 
 **1. ScreenRouter re-renders on navigation**

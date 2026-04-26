@@ -25,7 +25,7 @@ export default function MemberAvatar({ member, memberId, size = 'md', showBadges
     <div className="relative inline-flex flex-col items-center gap-0.5" style={{ width: dim }}>
       {/* Avatar */}
       <div
-        className="rounded-full overflow-hidden flex items-center justify-center font-bold text-white flex-shrink-0"
+        className="rounded-2xl overflow-hidden flex items-center justify-center font-bold text-white flex-shrink-0"
         style={{ width: dim, height: dim, background: member?.avatar ? undefined : colour, fontSize: dim * 0.38 }}
       >
         {member?.avatar

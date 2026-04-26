@@ -1,4 +1,4 @@
-import { mergeEntries, mergeMembers, mergeCounters } from './storage.js'
+import { mergeSessions } from './storage.js'
 
 const BIN_ID = import.meta.env.VITE_JSONBIN_ID
 const API_KEY = import.meta.env.VITE_JSONBIN_KEY
@@ -10,9 +10,37 @@ async function request(method, body) {
     'X-Master-Key': API_KEY,
     'X-Bin-Versioning': 'false',
   }
-  const res = await fetch(BASE, { method, headers, body: body ? JSON.stringify(body) : undefined })
-  if (!res.ok) throw new Error(`JSONBin ${method} ${res.status}`)
-  return res.json()
+
+  const bodyStr = body ? JSON.stringify(body) : undefined
+
+  console.debug(`[sync] ${method} ${BASE}`, {
+    binId: BIN_ID,
+    hasKey: !!API_KEY,
+    payloadBytes: bodyStr?.length ?? 0,
+  })
+
+  const res = await fetch(BASE, { method, headers, body: bodyStr })
+
+  if (!res.ok) {
+    let responseText = ''
+    try { responseText = await res.text() } catch { /* ignore */ }
+    const err = new Error(`JSONBin ${method} ${res.status}`)
+    err.status = res.status
+    err.responseBody = responseText
+    err.payloadBytes = bodyStr?.length ?? 0
+    console.error(`[sync] ${method} failed`, {
+      status: res.status,
+      responseBody: responseText,
+      payloadBytes: bodyStr?.length ?? 0,
+      binId: BIN_ID,
+      hasKey: !!API_KEY,
+    })
+    throw err
+  }
+
+  const json = await res.json()
+  console.debug(`[sync] ${method} ok`, { status: res.status })
+  return json
 }
 
 export async function pullRemote() {
@@ -20,40 +48,45 @@ export async function pullRemote() {
   return data.record ?? data
 }
 
-export async function pushRemote(localState) {
-  const payload = {
-    session: localState.session,
-    members: localState.members,
-    counters: localState.counters,
-    entries: localState.entries,
-    milestonesFired: localState.milestonesFired ?? [],
-  }
-  await request('PUT', payload)
+export async function pushRemote(state) {
+  await request('PUT', {
+    sessions: state.sessions,
+    activeSessionId: state.activeSessionId,
+  })
 }
 
-// Full push-pull-merge cycle. Returns merged state fields to dispatch.
 export async function syncCycle(localState) {
-  if (!BIN_ID || !API_KEY) throw new Error('JSONBin not configured')
+  if (!BIN_ID) throw new Error('VITE_JSONBIN_ID is not set')
+  if (!API_KEY) throw new Error('VITE_JSONBIN_KEY is not set')
 
-  // Pull first
+  console.debug('[sync] starting sync cycle', {
+    sessions: localState.sessions?.length,
+    activeSessionId: localState.activeSessionId,
+  })
+
   const remote = await pullRemote()
 
-  // Merge
-  const mergedEntries = mergeEntries(localState.entries, remote.entries ?? [])
-  const mergedMembers = mergeMembers(localState.members, remote.members ?? [])
-  const mergedCounters = mergeCounters(localState.counters, remote.counters ?? [])
-  const mergedMilestonesFired = Array.from(new Set([...(localState.milestonesFired ?? []), ...(remote.milestonesFired ?? [])]))
+  console.debug('[sync] pulled remote', {
+    remoteSessions: remote.sessions?.length ?? 0,
+  })
+
+  const mergedSessions = mergeSessions(
+    localState.sessions,
+    remote.sessions ?? []
+  )
 
   const merged = {
-    session: remote.session ?? localState.session,
-    members: mergedMembers,
-    counters: mergedCounters,
-    entries: mergedEntries,
-    milestonesFired: mergedMilestonesFired,
+    sessions: mergedSessions,
+    activeSessionId: localState.activeSessionId ?? remote.activeSessionId ?? null,
   }
 
-  // Push merged state back
+  console.debug('[sync] pushing merged state', {
+    sessions: mergedSessions.length,
+    totalEntries: mergedSessions.reduce((n, s) => n + (s.entries?.length ?? 0), 0),
+  })
+
   await pushRemote(merged)
 
+  console.debug('[sync] sync cycle complete')
   return merged
 }

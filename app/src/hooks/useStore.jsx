@@ -1,14 +1,47 @@
 import React, { createContext, useContext, useReducer, useCallback } from 'react'
-import { loadStore, saveStore, mergeEntries, mergeMembers, mergeCounters } from '../lib/storage.js'
+import { loadStore, saveStore, mergeSessions, EMPTY_SESSION } from '../lib/storage.js'
 import { generateEntryId } from '../lib/ids.js'
 
 const StoreContext = createContext(null)
 const DispatchContext = createContext(null)
 
+// Helper: update the active session immutably
+function updateActive(state, updater) {
+  const sessions = state.sessions.map(s =>
+    s.id === state.activeSessionId ? { ...s, ...updater(s) } : s
+  )
+  return { ...state, sessions }
+}
+
 function reducer(state, action) {
   let next
 
   switch (action.type) {
+
+    // ── Sessions ──
+    case 'CREATE_SESSION': {
+      const id = slugify(action.name) + '_' + Date.now()
+      const session = { ...EMPTY_SESSION, id, name: action.name, createdAt: new Date().toISOString() }
+      next = { ...state, sessions: [...state.sessions, session], activeSessionId: id }
+      break
+    }
+    case 'SET_ACTIVE_SESSION':
+      return { ...state, activeSessionId: action.id, sessionSwitcherOpen: false }
+
+    case 'RENAME_SESSION':
+      next = updateActive(state, () => ({ name: action.name }))
+      break
+
+    case 'REMOVE_SESSION': {
+      const sessions = state.sessions.filter(s => s.id !== action.id)
+      const activeSessionId = state.activeSessionId === action.id
+        ? (sessions[0]?.id ?? null)
+        : state.activeSessionId
+      next = { ...state, sessions, activeSessionId }
+      break
+    }
+
+    // ── Entries ──
     case 'ADD_ENTRY': {
       const entry = {
         id: generateEntryId(action.memberId),
@@ -19,105 +52,130 @@ function reducer(state, action) {
         timestamp: new Date().toISOString(),
         note: action.note ?? '',
       }
-      next = { ...state, entries: [...state.entries, entry], undoEntry: { entry, expiresAt: Date.now() + 10000 } }
+      next = updateActive(state, s => ({
+        entries: [...s.entries, entry],
+      }))
+      next = { ...next, undoEntry: { entry, expiresAt: Date.now() + 10000 } }
       break
     }
-    case 'UNDO_ENTRY': {
-      next = {
-        ...state,
-        entries: state.entries.filter(e => e.id !== state.undoEntry?.entry?.id),
-        undoEntry: null,
-      }
+    case 'UNDO_ENTRY':
+      next = updateActive(state, s => ({
+        entries: s.entries.filter(e => e.id !== state.undoEntry?.entry?.id),
+      }))
+      next = { ...next, undoEntry: null }
       break
-    }
+
     case 'CLEAR_UNDO':
-      next = { ...state, undoEntry: null }
+      return { ...state, undoEntry: null }
+
+    // ── Members ──
+    case 'UPSERT_MEMBER':
+      next = updateActive(state, s => {
+        const exists = s.members.find(m => m.id === action.member.id)
+        return {
+          members: exists
+            ? s.members.map(m => m.id === action.member.id ? { ...m, ...action.member } : m)
+            : [...s.members, action.member]
+        }
+      })
       break
 
-    case 'UPSERT_MEMBER': {
-      const exists = state.members.find(m => m.id === action.member.id)
-      const members = exists
-        ? state.members.map(m => m.id === action.member.id ? { ...m, ...action.member } : m)
-        : [...state.members, action.member]
-      next = { ...state, members }
-      break
-    }
-    case 'SET_MEMBERS':
-      next = { ...state, members: action.members }
+    case 'REMOVE_MEMBER':
+      next = updateActive(state, s => ({ members: s.members.filter(m => m.id !== action.id) }))
       break
 
-    case 'UPSERT_COUNTER': {
-      const exists = state.counters.find(c => c.id === action.counter.id)
-      const counters = exists
-        ? state.counters.map(c => c.id === action.counter.id ? { ...c, ...action.counter } : c)
-        : [...state.counters, action.counter]
-      next = { ...state, counters }
-      break
-    }
-    case 'ARCHIVE_COUNTER':
-      next = { ...state, counters: state.counters.map(c => c.id === action.id ? { ...c, archived: true } : c) }
-      break
-    case 'SET_COUNTERS':
-      next = { ...state, counters: action.counters }
+    // Rename member ID + migrate all entries pointing to oldId
+    case 'FIX_MEMBER_ID':
+      next = updateActive(state, s => ({
+        members: s.members.map(m => m.id === action.oldId ? { ...m, id: action.newId } : m),
+        entries: s.entries.map(e => e.member === action.oldId ? { ...e, member: action.newId } : e),
+      }))
       break
 
+    case 'REORDER_MEMBERS':
+      next = updateActive(state, s => {
+        const members = [...s.members]
+        const [item] = members.splice(action.from, 1)
+        members.splice(action.to, 0, item)
+        return { members }
+      })
+      break
+
+    // ── Counters ──
+    case 'UPSERT_COUNTER':
+      next = updateActive(state, s => {
+        const exists = s.counters.find(c => c.id === action.counter.id)
+        return {
+          counters: exists
+            ? s.counters.map(c => c.id === action.counter.id ? { ...c, ...action.counter } : c)
+            : [...s.counters, action.counter]
+        }
+      })
+      break
+
+    case 'REMOVE_COUNTER':
+      next = updateActive(state, s => ({ counters: s.counters.filter(c => c.id !== action.id) }))
+      break
+
+    case 'REORDER_COUNTERS':
+      next = updateActive(state, s => {
+        const counters = [...s.counters]
+        const [item] = counters.splice(action.from, 1)
+        counters.splice(action.to, 0, item)
+        return { counters }
+      })
+      break
+
+    // ── Remote sync ──
     case 'MERGE_REMOTE':
       next = {
         ...state,
-        session: action.data.session ?? state.session,
-        members: mergeMembers(state.members, action.data.members ?? []),
-        counters: mergeCounters(state.counters, action.data.counters ?? []),
-        entries: mergeEntries(state.entries, action.data.entries ?? []),
-        milestonesFired: Array.from(new Set([...(state.milestonesFired ?? []), ...(action.data.milestonesFired ?? [])])),
+        sessions: mergeSessions(state.sessions, action.data.sessions ?? []),
+        activeSessionId: state.activeSessionId ?? action.data.activeSessionId ?? null,
       }
       break
 
-    case 'SET_SESSION':
-      next = { ...state, session: action.session }
-      break
-
-    case 'SET_SYNC_STATUS':
-      return { ...state, syncStatus: action.status, lastSyncAt: action.ts ?? state.lastSyncAt }
-
-    case 'ENQUEUE_RETRY':
-      return { ...state, pendingPushIds: [...new Set([...(state.pendingPushIds ?? []), action.entryId])] }
-
-    case 'DEQUEUE_RETRY':
-      return { ...state, pendingPushIds: (state.pendingPushIds ?? []).filter(id => id !== action.entryId) }
-
+    // ── Milestone / gamification ──
     case 'PUSH_MILESTONE':
       return { ...state, milestoneQueue: [...(state.milestoneQueue ?? []), action.milestone] }
-
     case 'POP_MILESTONE':
       return { ...state, milestoneQueue: (state.milestoneQueue ?? []).slice(1) }
-
-    case 'SET_ACTIVE_SCREEN':
-      return { ...state, activeScreen: action.screen }
-
-    case 'SET_PROFILE_MODAL':
-      return { ...state, profileModalOpen: action.open }
-
-    case 'SET_TAUNT':
-      return { ...state, taunt: action.taunt }
-
-    case 'CLEAR_TAUNT':
-      return { ...state, taunt: null }
-
-    case 'RESET_LOCAL':
-      next = { ...loadStore() }
-      localStorage.clear()
+    case 'MARK_MILESTONE_FIRED':
+      next = updateActive(state, s => ({
+        milestonesFired: [...(s.milestonesFired ?? []), action.key]
+      }))
       break
 
+    // ── Sync status ──
+    case 'SET_SYNC_STATUS':
+      return { ...state, syncStatus: action.status, lastSyncAt: action.ts ?? state.lastSyncAt }
     case 'ADD_SYNC_LOG': {
       const log = [{ ts: new Date().toISOString(), ...action.entry }, ...(state.syncLog ?? [])].slice(0, 10)
       return { ...state, syncLog: log }
     }
 
+    // ── UI ──
+    case 'SET_ACTIVE_SCREEN':
+      return { ...state, activeScreen: action.screen }
+    case 'SET_PROFILE_MODAL':
+      return { ...state, profileModalOpen: action.open }
+    case 'SET_ADMIN_UNLOCKED':
+      return { ...state, adminUnlocked: action.value }
+    case 'SET_SESSION_SWITCHER':
+      return { ...state, sessionSwitcherOpen: action.open }
+    case 'SET_TAUNT':
+      return { ...state, taunt: action.taunt }
+    case 'CLEAR_TAUNT':
+      return { ...state, taunt: null }
+
+    case 'RESET_LOCAL':
+      localStorage.clear()
+      return buildInitialState()
+
     default:
       return state
   }
 
-  // Persist only data fields, not transient UI state
   saveStore(next)
   return next
 }
@@ -126,25 +184,43 @@ function buildInitialState() {
   const persisted = loadStore()
   return {
     ...persisted,
-    // transient
+    // transient UI state — never persisted
     syncStatus: 'pending',
     lastSyncAt: null,
-    pendingPushIds: [],
     undoEntry: null,
     milestoneQueue: [],
-    activeScreen: new URLSearchParams(window.location.search).get('screen') || 'home',
+    activeScreen: 'home',
     profileModalOpen: false,
+    adminUnlocked: false,
+    sessionSwitcherOpen: false,
     taunt: null,
     syncLog: [],
   }
 }
 
+function slugify(str) {
+  return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || Date.now().toString()
+}
+
 export function StoreProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, null, buildInitialState)
 
+  // Compute activeSession and surface members/counters/entries as top-level
+  // so all existing screens continue to work without changes
+  const activeSession = state.sessions.find(s => s.id === state.activeSessionId) ?? state.sessions[0] ?? null
+
+  const enriched = {
+    ...state,
+    activeSession,
+    members: activeSession?.members ?? [],
+    counters: activeSession?.counters ?? [],
+    entries: activeSession?.entries ?? [],
+    milestonesFired: activeSession?.milestonesFired ?? [],
+  }
+
   return (
     <DispatchContext.Provider value={dispatch}>
-      <StoreContext.Provider value={state}>
+      <StoreContext.Provider value={enriched}>
         {children}
       </StoreContext.Provider>
     </DispatchContext.Provider>
@@ -159,14 +235,10 @@ export function useDispatch() {
   return useContext(DispatchContext)
 }
 
-// Convenience: navigate to a screen by pushing URL params
 export function useNavigate() {
   const dispatch = useDispatch()
-  return useCallback((screen, extra = {}) => {
-    const params = new URLSearchParams(window.location.search)
-    params.set('screen', screen)
-    Object.entries(extra).forEach(([k, v]) => v != null ? params.set(k, v) : params.delete(k))
-    window.history.pushState({}, '', '?' + params.toString())
+  return useCallback((screen) => {
+    window.history.pushState({}, '', window.location.pathname + window.location.search)
     dispatch({ type: 'SET_ACTIVE_SCREEN', screen })
   }, [dispatch])
 }
