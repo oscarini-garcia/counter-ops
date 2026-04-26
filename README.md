@@ -50,6 +50,7 @@ GPS fires automatically when you open the Log screen. If it times out (5 seconds
 
 | Version | Date | Summary |
 |---|---|---|
+| 1.2.2 | 2026-04-26 | Tombstone deletes so sync never resurrects removed members; explicit Cancel/Delete confirm |
 | 1.2.1 | 2026-04-26 | Fix nav buttons doing nothing when app has no sessions yet |
 | 1.2.0 | 2026-04-26 | Sessions, admin CRUD with reorder, sync debug log, member link fix for accented names |
 | 1.1.3 | 2026-04-26 | Fix navigation — buttons now switch screens correctly |

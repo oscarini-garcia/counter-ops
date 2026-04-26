@@ -4,6 +4,19 @@ Each entry covers what shipped in that version and the specific files and decisi
 
 ---
 
+### v1.2.2 — 2026-04-26 — Tombstone deletes + explicit delete confirm
+
+**1. Tombstone deletes**
+`lib/storage.js` — `EMPTY_SESSION` gains `deletedMemberIds: []` and `deletedCounterIds: []`. `mergeMembers()` and `mergeCounters()` now accept a `deletedIds` set and skip any remote record whose ID appears in it. `mergeSessions()` unions the tombstone arrays from both sides so a delete on one device propagates to all others on next sync. `hooks/useStore.jsx` — `REMOVE_MEMBER` and `REMOVE_COUNTER` actions now append the deleted ID to the session's tombstone list in addition to filtering the array. Previously, a sync pull would re-add any member or counter that had been deleted locally but still existed in the remote JSONBin document.
+
+**2. Explicit Cancel/Delete confirm**
+`AdminScreen.jsx` — replaced the two-tap / `setTimeout` delete pattern with an inline confirmation card: tapping ✕ renders a `Cancel` + `Delete` button pair in place of the row; no timer, no race condition. Removed the `setTimeout(() => setDeleteConfirm(null), 3000)` call. Counter and member rows both use the new pattern.
+
+**3. CI: repository variables**
+`deploy.yml` — changed `${{ secrets.VITE_* }}` to `${{ vars.VITE_* }}` to match how the three env vars are stored in the repo (Actions → Variables, not Secrets).
+
+---
+
 ### v1.2.1 — 2026-04-26 — Fix nav buttons on empty app
 
 **1. AppShell gating removed**
