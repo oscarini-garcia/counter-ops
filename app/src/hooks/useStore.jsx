@@ -65,6 +65,13 @@ function reducer(state, action) {
       next = { ...next, undoEntry: null }
       break
 
+    case 'REMOVE_ENTRY':
+      next = updateActive(state, s => ({
+        entries: s.entries.filter(e => e.id !== action.id),
+        deletedEntryIds: Array.from(new Set([...(s.deletedEntryIds ?? []), action.id])),
+      }))
+      break
+
     case 'CLEAR_UNDO':
       return { ...state, undoEntry: null }
 

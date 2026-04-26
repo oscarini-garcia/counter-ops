@@ -93,7 +93,7 @@ function EditForm({ label: initLabel, emoji: initEmoji, showEmoji, onSave, onCan
 }
 
 export default function AdminScreen() {
-  const { counters, members } = useStore()
+  const { counters, members, entries } = useStore()
   const dispatch = useDispatch()
 
   const [newCounterLabel, setNewCounterLabel] = useState('')
@@ -102,7 +102,9 @@ export default function AdminScreen() {
   const [editingCounter, setEditingCounter] = useState(null) // id
   const [editingMember, setEditingMember] = useState(null)   // id
   const [showQR, setShowQR] = useState(false)
+  const [showEntries, setShowEntries] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(null)   // { type, id }
+  const [deleteEntryConfirm, setDeleteEntryConfirm] = useState(null) // entry id
 
   const baseUrl = window.location.origin + window.location.pathname.replace(/\/$/, '')
 
@@ -298,6 +300,62 @@ export default function AdminScreen() {
           </button>
         </form>
       </div>
+
+      {/* ── ENTRIES ── */}
+      {entries.length > 0 && (
+        <div>
+          <button
+            onClick={() => setShowEntries(v => !v)}
+            className="w-full flex items-center justify-between bg-slate-800 rounded-xl px-4 py-3 text-sm font-medium text-slate-200 active:bg-slate-700"
+          >
+            <span>🗂 Entries ({entries.length})</span>
+            <span className="text-slate-400">{showEntries ? '▲' : '▼'}</span>
+          </button>
+          {showEntries && (
+            <div className="flex flex-col gap-1 mt-2 max-h-96 overflow-y-auto">
+              {[...entries].sort((a, b) => b.timestamp.localeCompare(a.timestamp)).map(e => {
+                const memberName = members.find(m => m.id === e.member)?.name ?? e.member
+                const counter = counters.find(c => c.id === e.counter)
+                const isConfirming = deleteEntryConfirm === e.id
+                return (
+                  <div key={e.id} className={`rounded-xl px-3 py-2 flex items-center gap-2 ${isConfirming ? 'bg-red-900/40 border border-red-700/50' : 'bg-slate-800'}`}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-sm font-medium text-slate-100">{memberName}</span>
+                        <span className="text-slate-500 text-xs">·</span>
+                        <span className="text-sm text-slate-300">{counter?.emoji} {counter?.label ?? e.counter}</span>
+                        {e.qty !== 1 && <span className="text-xs text-indigo-400 font-semibold">×{e.qty}</span>}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-0.5">
+                        {new Date(e.timestamp).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        {e.note ? ` · ${e.note}` : ''}
+                      </div>
+                    </div>
+                    {isConfirming ? (
+                      <div className="flex gap-1.5 flex-shrink-0">
+                        <button onClick={() => setDeleteEntryConfirm(null)} className="text-xs px-2 py-1 rounded-lg bg-slate-700 text-slate-200">Cancel</button>
+                        <button
+                          onClick={() => {
+                            dispatch({ type: 'REMOVE_ENTRY', id: e.id })
+                            setDeleteEntryConfirm(null)
+                            window.dispatchEvent(new CustomEvent('counter-ops:sync'))
+                          }}
+                          className="text-xs px-2 py-1 rounded-lg bg-red-600 text-white font-semibold"
+                        >Delete</button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setDeleteEntryConfirm(e.id)}
+                        className="text-slate-500 active:text-red-400 flex-shrink-0 px-1 py-1 text-lg leading-none"
+                      >✕</button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── QR CODES ── */}
       {members.length > 0 && (

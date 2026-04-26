@@ -10,6 +10,7 @@ export const EMPTY_SESSION = {
   milestonesFired: [],
   deletedMemberIds: [],
   deletedCounterIds: [],
+  deletedEntryIds: [],
 }
 
 export const EMPTY_STORE = {
@@ -55,10 +56,11 @@ export function saveStore(state) {
 
 // ── Per-session merge helpers ──
 
-export function mergeEntries(local = [], remote = []) {
+export function mergeEntries(local = [], remote = [], deletedIds = []) {
+  const deleted = new Set(deletedIds)
   const map = new Map()
-  for (const e of local) map.set(e.id, e)
-  for (const e of remote) { if (!map.has(e.id)) map.set(e.id, e) }
+  for (const e of local) if (!deleted.has(e.id)) map.set(e.id, e)
+  for (const e of remote) { if (!deleted.has(e.id) && !map.has(e.id)) map.set(e.id, e) }
   return Array.from(map.values()).sort((a, b) => a.timestamp.localeCompare(b.timestamp))
 }
 
@@ -91,15 +93,17 @@ export function mergeSessions(local = [], remote = []) {
       // Union tombstone lists so deletes propagate across devices
       const deletedMemberIds = Array.from(new Set([...(ls.deletedMemberIds ?? []), ...(rs.deletedMemberIds ?? [])]))
       const deletedCounterIds = Array.from(new Set([...(ls.deletedCounterIds ?? []), ...(rs.deletedCounterIds ?? [])]))
+      const deletedEntryIds = Array.from(new Set([...(ls.deletedEntryIds ?? []), ...(rs.deletedEntryIds ?? [])]))
       map.set(rs.id, {
         ...rs,
         name: ls.name,        // local name wins
         members: mergeMembers(ls.members, rs.members, deletedMemberIds),
         counters: mergeCounters(ls.counters, rs.counters, deletedCounterIds),
-        entries: mergeEntries(ls.entries, rs.entries),
+        entries: mergeEntries(ls.entries, rs.entries, deletedEntryIds),
         milestonesFired: Array.from(new Set([...(ls.milestonesFired ?? []), ...(rs.milestonesFired ?? [])])),
         deletedMemberIds,
         deletedCounterIds,
+        deletedEntryIds,
       })
     } else {
       map.set(rs.id, rs)
