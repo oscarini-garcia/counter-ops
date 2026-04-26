@@ -22,9 +22,9 @@ jobs:
       - name: Install and build
         working-directory: app
         env:
-          VITE_JSONBIN_ID: ${{ secrets.VITE_JSONBIN_ID }}
-          VITE_JSONBIN_KEY: ${{ secrets.VITE_JSONBIN_KEY }}
-          VITE_ADMIN_KEY: ${{ secrets.VITE_ADMIN_KEY }}
+          VITE_JSONBIN_ID: ${{ vars.VITE_JSONBIN_ID }}
+          VITE_JSONBIN_KEY: ${{ vars.VITE_JSONBIN_KEY }}
+          VITE_ADMIN_KEY: ${{ vars.VITE_ADMIN_KEY }}
         run: |
           npm install
           npm run build
