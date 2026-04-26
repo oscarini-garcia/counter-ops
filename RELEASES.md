@@ -4,6 +4,13 @@ Each entry covers what shipped in that version and the specific files and decisi
 
 ---
 
+### v1.1.1 — 2026-04-26 — GitHub Pages subpath fix
+
+**1. Base path**
+Added `base: '/counter-ops/'` to `app/vite.config.js` (top-level, before `defineConfig`). Ensures all JS/CSS asset URLs and the PWA `start_url` resolve correctly when the app is served from `https://oscarini-garcia.github.io/counter-ops/` rather than a root domain.
+
+---
+
 ### v1.1.0 — 2026-04-26 — GitHub Pages deploy workflow
 
 **1. CI/CD**
