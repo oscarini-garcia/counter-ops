@@ -50,5 +50,6 @@ GPS fires automatically when you open the Log screen. If it times out (5 seconds
 
 | Version | Date | Summary |
 |---|---|---|
+| 1.0.1 | 2026-04-26 | Add package-lock.json for reproducible installs |
 | 1.0.0 | 2026-04-26 | Full app — all screens, GPS sync, gamification, JSONBin remote sync, PWA |
 | 0.1.0 | 2026-04-26 | Initial scaffold — Vite + React + Tailwind + PWA manifest |
