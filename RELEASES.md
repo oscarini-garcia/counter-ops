@@ -4,6 +4,13 @@ Each entry covers what shipped in that version and the specific files and decisi
 
 ---
 
+### v1.1.0 — 2026-04-26 — GitHub Pages deploy workflow
+
+**1. CI/CD**
+Added `.github/workflows/deploy.yml`. On every push to `main`: checks out the repo, installs Node 20, runs `npm install && npm run build` inside `app/` with the three secrets (`VITE_JSONBIN_ID`, `VITE_JSONBIN_KEY`, `VITE_ADMIN_KEY`) injected as env vars, uploads `app/dist` as a Pages artifact, and deploys via `actions/deploy-pages@v4`. The deployment URL is surfaced as the environment URL in the GitHub Actions UI.
+
+---
+
 ### v1.0.1 — 2026-04-26 — Lock file
 
 **1. Reproducible installs**
