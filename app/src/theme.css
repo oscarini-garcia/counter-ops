@@ -23,6 +23,19 @@
 
 * { -webkit-tap-highlight-color: transparent; }
 
+/* Native date/time inputs have capricious intrinsic widths (especially iOS)
+   that blow past their containers — neutralize them app-wide */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 38px;
+}
+input::-webkit-date-and-time-value { text-align: left; }
+
 html, body, #root {
   height: 100%;
   background-color: var(--c-bg);
