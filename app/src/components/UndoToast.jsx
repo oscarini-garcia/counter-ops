@@ -17,11 +17,11 @@ export default function UndoToast({ onUndo }) {
       })
     }, 1000)
     return () => clearInterval(interval)
-  }, [undoEntry?.entry?.id])
+  }, [undoEntry?.expiresAt])
 
   if (!undoEntry) return null
 
-  const { entry } = undoEntry
+  const count = undoEntry.entries?.length ?? 1
 
   return ReactDOM.createPortal(
     <div className="fixed bottom-20 left-0 right-0 flex justify-center px-4 z-50" style={{ bottom: 'calc(4rem + var(--safe-bottom))' }}>
@@ -29,7 +29,9 @@ export default function UndoToast({ onUndo }) {
         className="flex items-center gap-3 rounded-2xl px-4 py-3 shadow-xl max-w-sm w-full"
         style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
       >
-        <span className="text-sm flex-1" style={{ color: 'var(--c-text)' }}>Consta en acta ✓</span>
+        <span className="text-sm flex-1" style={{ color: 'var(--c-text)' }}>
+          {count > 1 ? `Constan en acta los ${count} ✓` : 'Consta en acta ✓'}
+        </span>
         <button
           onClick={() => { onUndo?.(); dispatch({ type: 'UNDO_ENTRY' }) }}
           className="text-sm font-semibold px-2 py-1 rounded-lg active:opacity-70"

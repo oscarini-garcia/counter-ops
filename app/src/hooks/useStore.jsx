@@ -50,29 +50,33 @@ function reducer(state, action) {
 
     // ── Entries ──
     case 'ADD_ENTRY': {
-      const entry = {
-        id: generateEntryId(action.memberId),
-        member: action.memberId,
+      // Accepts one member (memberId) or several at once (memberIds) —
+      // a round of drinks becomes one entry per person
+      const memberIds = action.memberIds ?? [action.memberId]
+      const timestamp = action.timestamp ?? new Date().toISOString()
+      const newEntries = memberIds.map(mid => ({
+        id: generateEntryId(mid),
+        member: mid,
         counter: action.counterId,
         qty: action.qty ?? 1,
         rating: action.rating ?? null,   // 1-5 or null
         location: action.location ?? null,
-        timestamp: action.timestamp ?? new Date().toISOString(),
+        timestamp,
         note: action.note ?? '',
-      }
-      next = updateActive(state, s => ({
-        entries: [...s.entries, entry],
       }))
-      next = { ...next, undoEntry: { entry, expiresAt: Date.now() + 3000 } }
+      next = updateActive(state, s => ({
+        entries: [...s.entries, ...newEntries],
+      }))
+      next = { ...next, undoEntry: { entries: newEntries, expiresAt: Date.now() + 3000 } }
       break
     }
     case 'UNDO_ENTRY': {
-      // The entry may already be pushed remotely (sync fires on add), so the
-      // undo needs a tombstone or the next pull would resurrect it
-      const undoId = state.undoEntry?.entry?.id
+      // The entries may already be pushed remotely (sync fires on add), so
+      // the undo needs tombstones or the next pull would resurrect them
+      const undoIds = (state.undoEntry?.entries ?? []).map(e => e.id)
       next = updateActive(state, s => ({
-        entries: s.entries.filter(e => e.id !== undoId),
-        deletedEntryIds: undoId ? addTombstone(s.deletedEntryIds, undoId) : s.deletedEntryIds,
+        entries: s.entries.filter(e => !undoIds.includes(e.id)),
+        deletedEntryIds: undoIds.reduce((list, id) => addTombstone(list, id), s.deletedEntryIds ?? []),
       }))
       next = { ...next, undoEntry: null }
       break
