@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useStore, useDispatch } from '../hooks/useStore.jsx'
 import QRCodeCard from '../components/QRCodeCard.jsx'
+import { geocodePlace, isGeocodeCached } from '../lib/geo.js'
 
 function slugify(str) {
   return str
@@ -112,16 +113,35 @@ function EditForm({ label: initLabel, emoji: initEmoji, showEmoji, onSave, onCan
   )
 }
 
-// Format an ISO timestamp for <input type="datetime-local"> in local time
-function toLocalInputValue(iso) {
+// Split an ISO timestamp into local-time values for date and time inputs
+function toDateInput(iso) {
   const d = new Date(iso)
   const pad = n => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+function toTimeInput(iso) {
+  const d = new Date(iso)
+  const pad = n => String(n).padStart(2, '0')
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+function combineDateTime(baseIso, dateStr, timeStr) {
+  const nd = new Date(baseIso)
+  if (dateStr) {
+    const [y, mo, d] = dateStr.split('-').map(Number)
+    nd.setFullYear(y, mo - 1, d)
+  }
+  if (timeStr) {
+    const [hh, mm] = timeStr.split(':').map(Number)
+    nd.setHours(hh, mm)
+  }
+  return nd.toISOString()
 }
 
-// Inline editor for an entry's date and place
+// Inline editor for an entry's date, time and place. Separate date + time
+// inputs instead of datetime-local — its intrinsic width broke narrow screens.
 function EntryEditForm({ entry, onSave, onCancel }) {
-  const [when, setWhen] = useState(toLocalInputValue(entry.timestamp))
+  const [date, setDate]   = useState(toDateInput(entry.timestamp))
+  const [time, setTime]   = useState(toTimeInput(entry.timestamp))
   const [place, setPlace] = useState(entry.location?.label ?? '')
 
   const fieldStyle = {
@@ -134,28 +154,40 @@ function EntryEditForm({ entry, onSave, onCancel }) {
 
   function handleSubmit(e) {
     e.preventDefault()
-    const parsed = when ? new Date(when) : null
-    const timestamp = parsed && !isNaN(parsed) ? parsed.toISOString() : entry.timestamp
+    const timestamp = combineDateTime(entry.timestamp, date, time)
     const label = place.trim()
-    // Keep lat/lng if the entry had them; only the label is edited by hand
+    // Same label → keep existing coordinates; new label → drop them so the
+    // geocoder can fill in fresh ones
     const location = label
-      ? { ...(entry.location ?? {}), label }
+      ? (label === (entry.location?.label ?? '') ? entry.location : { label })
       : (entry.location?.lat != null ? { ...entry.location, label: null } : null)
     onSave({ timestamp, location })
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-2">
-      <label className="text-xs flex flex-col gap-1" style={{ color: 'var(--c-text-muted)' }}>
-        📅 Fecha y hora (viajar en el tiempo es legal aquí)
-        <input
-          type="datetime-local"
-          value={when}
-          onChange={e => setWhen(e.target.value)}
-          className="rounded-lg px-2 py-1.5 text-sm outline-none w-full"
-          style={fieldStyle}
-        />
-      </label>
+      <div className="grid grid-cols-2 gap-2">
+        <label className="text-xs flex flex-col gap-1 min-w-0" style={{ color: 'var(--c-text-muted)' }}>
+          📅 Fecha
+          <input
+            type="date"
+            value={date}
+            onChange={e => setDate(e.target.value)}
+            className="rounded-lg px-2 py-1.5 text-sm outline-none w-full"
+            style={fieldStyle}
+          />
+        </label>
+        <label className="text-xs flex flex-col gap-1 min-w-0" style={{ color: 'var(--c-text-muted)' }}>
+          🕐 Hora
+          <input
+            type="time"
+            value={time}
+            onChange={e => setTime(e.target.value)}
+            className="rounded-lg px-2 py-1.5 text-sm outline-none w-full"
+            style={fieldStyle}
+          />
+        </label>
+      </div>
       <label className="text-xs flex flex-col gap-1" style={{ color: 'var(--c-text-muted)' }}>
         📍 Lugar (la coartada)
         <input
@@ -203,6 +235,42 @@ export default function AdminScreen() {
   const [bulkDate, setBulkDate] = useState('')
   const [bulkTime, setBulkTime] = useState('')
   const [bulkPlace, setBulkPlace] = useState('')
+  const [geoFix, setGeoFix] = useState(null) // { done, total, matched, finished }
+
+  // Hand-typed places have a label but no coordinates → invisible on the map
+  const unlocated = entries.filter(e => e.location?.label && e.location.lat == null)
+
+  async function saveEntryPatch(id, patch) {
+    if (patch.location?.label && patch.location.lat == null) {
+      const coords = await geocodePlace(patch.location.label)
+      if (coords) patch = { ...patch, location: { ...patch.location, ...coords } }
+    }
+    dispatch({ type: 'UPDATE_ENTRY', id, patch })
+    window.dispatchEvent(new CustomEvent('counter-ops:sync'))
+  }
+
+  async function fixLocations() {
+    const targets = entries.filter(e => e.location?.label && e.location.lat == null)
+    const labels = [...new Set(targets.map(e => e.location.label))]
+    let matched = 0
+    setGeoFix({ done: 0, total: labels.length, matched })
+    for (let i = 0; i < labels.length; i++) {
+      const label = labels[i]
+      const cached = isGeocodeCached(label)
+      const coords = await geocodePlace(label)
+      if (coords) {
+        matched++
+        for (const t of targets.filter(x => x.location.label === label)) {
+          dispatch({ type: 'UPDATE_ENTRY', id: t.id, patch: { location: { ...t.location, ...coords } } })
+        }
+      }
+      setGeoFix({ done: i + 1, total: labels.length, matched })
+      // Nominatim usage policy: max 1 request/s (cache hits don't count)
+      if (!cached && i < labels.length - 1) await new Promise(r => setTimeout(r, 1100))
+    }
+    setGeoFix({ done: labels.length, total: labels.length, matched, finished: true })
+    window.dispatchEvent(new CustomEvent('counter-ops:sync'))
+  }
 
   const baseUrl = window.location.origin + import.meta.env.BASE_URL.replace(/\/$/, '')
 
@@ -246,9 +314,11 @@ export default function AdminScreen() {
     setBulkPlace('')
   }
 
-  function applyBulk() {
+  async function applyBulk() {
     const place = bulkPlace.trim()
     if (!bulkDate && !bulkTime && !place) return
+    // One lookup covers every selected entry (fresh coords, not the old ones)
+    const coords = place ? await geocodePlace(place) : null
     for (const id of bulkSelected) {
       const entry = entries.find(en => en.id === id)
       if (!entry) continue
@@ -267,7 +337,7 @@ export default function AdminScreen() {
         }
         patch.timestamp = nd.toISOString()
       }
-      if (place) patch.location = { ...(entry.location ?? {}), label: place }
+      if (place) patch.location = { label: place, ...(coords ?? {}) }
       dispatch({ type: 'UPDATE_ENTRY', id, patch })
     }
     exitBulk()
@@ -502,6 +572,38 @@ export default function AdminScreen() {
             <span>🗂 Entradas ({entries.length})</span>
             <span style={{ color: 'var(--c-text-muted)' }}>{showEntries ? '▲' : '▼'}</span>
           </button>
+
+          {/* Geocode hand-typed places so they show up on the map */}
+          {(unlocated.length > 0 || geoFix) && (
+            <div
+              className="rounded-xl px-3 py-2.5 mt-2 flex items-center gap-2 flex-wrap text-xs"
+              style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}
+            >
+              {geoFix && !geoFix.finished ? (
+                <span style={{ color: 'var(--c-text-muted)' }}>
+                  📍 Buscando coordenadas… {geoFix.done}/{geoFix.total} lugares
+                </span>
+              ) : geoFix?.finished ? (
+                <span style={{ color: 'var(--c-text-muted)' }}>
+                  📍 Hecho: {geoFix.matched} de {geoFix.total} {geoFix.total === 1 ? 'lugar encontrado' : 'lugares encontrados'}
+                  {unlocated.length > 0 ? ` · ${unlocated.length} sin resultado (¿nombre más concreto?)` : ' 🗺️'}
+                </span>
+              ) : (
+                <>
+                  <span className="flex-1 min-w-0" style={{ color: 'var(--c-text-muted)' }}>
+                    📍 {unlocated.length} {unlocated.length === 1 ? 'entrada tiene' : 'entradas tienen'} lugar sin coordenadas (no salen en el mapa)
+                  </span>
+                  <button
+                    onClick={fixLocations}
+                    className="text-xs px-3 py-1.5 rounded-lg font-semibold active:opacity-80 flex-shrink-0"
+                    style={{ background: 'var(--c-brand)', color: '#fff' }}
+                  >
+                    Buscar coordenadas
+                  </button>
+                </>
+              )}
+            </div>
+          )}
           {showEntries && (
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               {!bulkMode ? (
@@ -618,9 +720,8 @@ export default function AdminScreen() {
                       <EntryEditForm
                         entry={e}
                         onSave={patch => {
-                          dispatch({ type: 'UPDATE_ENTRY', id: e.id, patch })
                           setEditingEntry(null)
-                          window.dispatchEvent(new CustomEvent('counter-ops:sync'))
+                          saveEntryPatch(e.id, patch)
                         }}
                         onCancel={() => setEditingEntry(null)}
                       />
@@ -637,8 +738,8 @@ export default function AdminScreen() {
               className="rounded-xl p-3 mt-2 flex flex-col gap-2.5"
               style={{ background: 'var(--c-surface)', border: '1.5px solid rgba(232,97,58,0.35)' }}
             >
-              <div className="flex gap-2">
-                <label className="text-xs flex flex-col gap-1 flex-1 min-w-0" style={{ color: 'var(--c-text-muted)' }}>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="text-xs flex flex-col gap-1 min-w-0" style={{ color: 'var(--c-text-muted)' }}>
                   📅 Nueva fecha
                   <input
                     type="date"
@@ -648,7 +749,7 @@ export default function AdminScreen() {
                     style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', color: 'var(--c-text)', minWidth: 0 }}
                   />
                 </label>
-                <label className="text-xs flex flex-col gap-1 w-28" style={{ color: 'var(--c-text-muted)' }}>
+                <label className="text-xs flex flex-col gap-1 min-w-0" style={{ color: 'var(--c-text-muted)' }}>
                   🕐 Nueva hora
                   <input
                     type="time"
