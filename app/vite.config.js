@@ -31,16 +31,16 @@ export default defineConfig({
       },
       manifest: {
         name: 'Counter Ops',
-        short_name: 'Counter',
+        short_name: 'Contador',
         description: 'El contador familiar de vacaciones — helados, cañas y cero remordimientos',
-        theme_color: '#6366f1',
-        background_color: '#0f172a',
+        theme_color: '#e8613a',
+        background_color: '#fef3ed',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/counter-ops/',
         icons: [
-          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+          { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
         ]
       }
     })
