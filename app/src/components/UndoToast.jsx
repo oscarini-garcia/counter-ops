@@ -2,14 +2,14 @@ import React, { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 import { useStore, useDispatch } from '../hooks/useStore.jsx'
 
-export default function UndoToast() {
+export default function UndoToast({ onUndo }) {
   const { undoEntry } = useStore()
   const dispatch = useDispatch()
-  const [remaining, setRemaining] = useState(10)
+  const [remaining, setRemaining] = useState(3)
 
   useEffect(() => {
     if (!undoEntry) return
-    setRemaining(10)
+    setRemaining(3)
     const interval = setInterval(() => {
       setRemaining(r => {
         if (r <= 1) { clearInterval(interval); dispatch({ type: 'CLEAR_UNDO' }); return 0 }
@@ -31,7 +31,7 @@ export default function UndoToast() {
       >
         <span className="text-sm flex-1" style={{ color: 'var(--c-text)' }}>Consta en acta ✓</span>
         <button
-          onClick={() => dispatch({ type: 'UNDO_ENTRY' })}
+          onClick={() => { onUndo?.(); dispatch({ type: 'UNDO_ENTRY' }) }}
           className="text-sm font-semibold px-2 py-1 rounded-lg active:opacity-70"
           style={{ color: 'var(--c-brand)' }}
         >
