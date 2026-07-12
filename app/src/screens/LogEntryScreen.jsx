@@ -10,7 +10,7 @@ export default function LogEntryScreen() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
-  const [selectedMember,  setSelectedMember]  = useState(memberId || '')
+  const [selectedMembers, setSelectedMembers] = useState(memberId ? [memberId] : [])
   const [selectedCounter, setSelectedCounter] = useState('')
   const [qty,             setQty]             = useState(1)
   const [rating,          setRating]          = useState(null)
@@ -51,13 +51,17 @@ export default function LogEntryScreen() {
     if (cid && counters.find(c => c.id === cid)) setSelectedCounter(cid)
   }, [])
 
+  function toggleMember(id) {
+    setSelectedMembers(sel => sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id])
+  }
+
   function handleSubmit(e) {
     e.preventDefault()
-    if (!selectedMember || !selectedCounter) return
+    if (selectedMembers.length === 0 || !selectedCounter) return
     const parsed = customTime && when ? new Date(when) : null
     dispatch({
       type: 'ADD_ENTRY',
-      memberId: selectedMember,
+      memberIds: selectedMembers,
       counterId: selectedCounter,
       qty,
       rating,
@@ -91,14 +95,19 @@ export default function LogEntryScreen() {
 
       {/* Who */}
       <div>
-        <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--c-text-muted)' }}>¿Quién ha sido?</label>
+        <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--c-text-muted)' }}>¿Quién ha sido? (los cómplices también cuentan)</label>
         <div className="flex flex-wrap gap-2">
           {members.map(m => (
-            <button key={m.id} type="button" onClick={() => setSelectedMember(m.id)} style={chip(selectedMember === m.id)}>
-              {m.name}
+            <button key={m.id} type="button" onClick={() => toggleMember(m.id)} style={chip(selectedMembers.includes(m.id))}>
+              {selectedMembers.includes(m.id) ? '✓ ' : ''}{m.name}
             </button>
           ))}
         </div>
+        {selectedMembers.length > 1 && (
+          <p className="text-[11px] italic mt-1.5" style={{ color: 'var(--c-text-muted)' }}>
+            Se apuntará una por cabeza: {selectedMembers.length} entradas. Ronda completa. 🍻
+          </p>
+        )}
       </div>
 
       {/* What */}
@@ -251,7 +260,7 @@ export default function LogEntryScreen() {
       {/* Submit */}
       <button
         type="submit"
-        disabled={!selectedMember || !selectedCounter}
+        disabled={selectedMembers.length === 0 || !selectedCounter}
         className="w-full font-bold py-4 rounded-2xl text-base disabled:opacity-40 active:opacity-80 transition-opacity mt-1"
         style={{ background: 'var(--c-brand)', color: '#fff', fontSize: 16 }}
       >
