@@ -11,6 +11,7 @@ const HomeScreen = lazy(() => import('./screens/HomeScreen.jsx'))
 const LogEntryScreen = lazy(() => import('./screens/LogEntryScreen.jsx'))
 const EntryLogScreen = lazy(() => import('./screens/EntryLogScreen.jsx'))
 const ReportScreen = lazy(() => import('./screens/ReportScreen.jsx'))
+const StatsScreen = lazy(() => import('./screens/StatsScreen.jsx'))
 const AdminScreen = lazy(() => import('./screens/AdminScreen.jsx'))
 const SettingsScreen = lazy(() => import('./screens/SettingsScreen.jsx'))
 
@@ -22,6 +23,7 @@ function ScreenRouter() {
     log: <LogEntryScreen />,
     entries: <EntryLogScreen />,
     report: <ReportScreen />,
+    stats: <StatsScreen />,
     admin: adminUnlocked ? <AdminScreen /> : <HomeScreen />,
     settings: <SettingsScreen />,
   }

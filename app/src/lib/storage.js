@@ -16,6 +16,7 @@ export const EMPTY_SESSION = {
 export const EMPTY_STORE = {
   sessions: [],
   activeSessionId: null,
+  currentMemberId: null,   // device-level identity, never synced
 }
 
 export function loadStore() {
@@ -51,6 +52,7 @@ export function saveStore(state) {
   localStorage.setItem(KEY, JSON.stringify({
     sessions: state.sessions,
     activeSessionId: state.activeSessionId,
+    currentMemberId: state.currentMemberId ?? null,
   }))
 }
 

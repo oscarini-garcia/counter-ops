@@ -20,6 +20,34 @@ export function getRandomTaunt() {
   return TAUNTS[Math.floor(Math.random() * TAUNTS.length)]
 }
 
+export const RANK_MEDALS = ['🥇', '🥈', '🥉']
+
+const MIDDLE_QUIPS = [
+  'En tierra de nadie, pero con estilo.',
+  'Zona templada de la tabla. Ni frío ni calor.',
+  'Discretamente constante. Sospechoso.',
+  'Ni podio ni farolillo. La vida del medio.',
+]
+
+export function rankQuip(i, count, total) {
+  if (total === 0) return '¿Vacaciones o retiro espiritual?'
+  if (count === 1) return 'Campeón por incomparecencia del resto.'
+  if (i === 0) return 'Liderato indiscutible. Los libros de récords tiemblan.'
+  if (i === count - 1) return 'Farolillo rojo. Alguien tenía que serlo. 🐴'
+  if (i === 1) return 'A un heladito de la gloria.'
+  if (i === 2) return 'Podio salvado por los pelos.'
+  return MIDDLE_QUIPS[i % MIDDLE_QUIPS.length]
+}
+
+// Medal shown next to a member's name given their rank in the sorted-by-total
+// list. Daily champion wears the crown; the overall laggard gets the donkey.
+export function rankMedal(i, count, total, memberId, championId, donkeyId) {
+  if (total === 0) return null
+  if (memberId === championId) return '👑'
+  if (memberId === donkeyId) return '🐴'
+  return RANK_MEDALS[i] ?? null
+}
+
 // Daily champion: most consumed today
 export function getChampion(entries) {
   const today = new Date().toDateString()

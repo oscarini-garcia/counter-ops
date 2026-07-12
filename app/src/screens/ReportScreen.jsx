@@ -3,28 +3,10 @@ import { useStore } from '../hooks/useStore.jsx'
 import { useMember } from '../hooks/useMember.js'
 import MemberAvatar from '../components/MemberAvatar.jsx'
 import { generateAwards } from '../lib/awards.js'
+import { rankQuip, RANK_MEDALS } from '../lib/gamification.js'
 
 const LeafletMap    = lazy(() => import('../components/LeafletMap.jsx'))
 const TimelineChart = lazy(() => import('../components/TimelineChart.jsx'))
-
-const MIDDLE_QUIPS = [
-  'En tierra de nadie, pero con estilo.',
-  'Zona templada de la tabla. Ni frío ni calor.',
-  'Discretamente constante. Sospechoso.',
-  'Ni podio ni farolillo. La vida del medio.',
-]
-
-function rankQuip(i, count, total) {
-  if (total === 0) return '¿Vacaciones o retiro espiritual?'
-  if (count === 1) return 'Campeón por incomparecencia del resto.'
-  if (i === 0) return 'Liderato indiscutible. Los libros de récords tiemblan.'
-  if (i === count - 1) return 'Farolillo rojo. Alguien tenía que serlo. 🐴'
-  if (i === 1) return 'A un heladito de la gloria.'
-  if (i === 2) return 'Podio salvado por los pelos.'
-  return MIDDLE_QUIPS[i % MIDDLE_QUIPS.length]
-}
-
-const RANK_MEDALS = ['🥇', '🥈', '🥉']
 
 export default function ReportScreen() {
   const { entries, members, counters, session } = useStore()
@@ -114,17 +96,16 @@ export default function ReportScreen() {
                 border: i === 0 ? '1.5px solid rgba(232,97,58,0.25)' : '1px solid var(--c-border)',
               }}
             >
-              <span className="font-bold text-sm w-6 text-center" style={{ color: 'var(--c-text-muted)' }}>
-                {total > 0 && RANK_MEDALS[i] ? RANK_MEDALS[i] : i + 1}
-              </span>
+              <span className="font-bold text-sm w-6 text-center" style={{ color: 'var(--c-text-muted)' }}>{i + 1}</span>
               <MemberAvatar member={member} memberId={member.id} size="sm" showBadges={false} />
               <div className="flex-1 min-w-0">
-                <span className="font-semibold block" style={{ color: 'var(--c-text)' }}>{member.name}</span>
+                <span className="font-semibold block" style={{ color: 'var(--c-text)' }}>
+                  {member.name}{total > 0 && RANK_MEDALS[i] ? ` ${RANK_MEDALS[i]}` : ''}
+                </span>
                 <span className="text-[11px] italic block truncate" style={{ color: 'var(--c-text-muted)' }}>
                   {rankQuip(i, totalsPerMember.length, total)}
                 </span>
               </div>
-              {i === 0 && total > 0 && <span>👑</span>}
               <span className="text-xl font-black" style={{ color: i === 0 ? 'var(--c-brand)' : 'var(--c-text)' }}>{total}</span>
             </div>
           ))}

@@ -196,6 +196,10 @@ export default function AdminScreen() {
   const [deleteConfirm, setDeleteConfirm] = useState(null)   // { type, id }
   const [deleteEntryConfirm, setDeleteEntryConfirm] = useState(null) // entry id
   const [editingEntry, setEditingEntry] = useState(null)             // entry id
+  const [bulkMode, setBulkMode] = useState(false)
+  const [bulkSelected, setBulkSelected] = useState([])               // entry ids
+  const [bulkDate, setBulkDate] = useState('')
+  const [bulkPlace, setBulkPlace] = useState('')
 
   const baseUrl = window.location.origin + import.meta.env.BASE_URL.replace(/\/$/, '')
 
@@ -224,6 +228,38 @@ export default function AdminScreen() {
     const name = newMemberName.trim()
     dispatch({ type: 'UPSERT_MEMBER', member: { id: slugify(name), name } })
     setNewMemberName('')
+    window.dispatchEvent(new CustomEvent('counter-ops:sync'))
+  }
+
+  function toggleBulk(id) {
+    setBulkSelected(sel => sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id])
+  }
+
+  function exitBulk() {
+    setBulkMode(false)
+    setBulkSelected([])
+    setBulkDate('')
+    setBulkPlace('')
+  }
+
+  function applyBulk() {
+    const place = bulkPlace.trim()
+    if (!bulkDate && !place) return
+    for (const id of bulkSelected) {
+      const entry = entries.find(en => en.id === id)
+      if (!entry) continue
+      const patch = {}
+      if (bulkDate) {
+        // New date, same time of day — the usual fix is "wrong day, right hour"
+        const [y, mo, d] = bulkDate.split('-').map(Number)
+        const nd = new Date(entry.timestamp)
+        nd.setFullYear(y, mo - 1, d)
+        patch.timestamp = nd.toISOString()
+      }
+      if (place) patch.location = { ...(entry.location ?? {}), label: place }
+      dispatch({ type: 'UPDATE_ENTRY', id, patch })
+    }
+    exitBulk()
     window.dispatchEvent(new CustomEvent('counter-ops:sync'))
   }
 
@@ -456,23 +492,69 @@ export default function AdminScreen() {
             <span style={{ color: 'var(--c-text-muted)' }}>{showEntries ? '▲' : '▼'}</span>
           </button>
           {showEntries && (
+            <div className="flex items-center gap-2 mt-2">
+              {!bulkMode ? (
+                <button
+                  onClick={() => setBulkMode(true)}
+                  className="text-xs px-3 py-1.5 rounded-lg font-semibold active:opacity-70"
+                  style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
+                >☑️ Seleccionar varias</button>
+              ) : (
+                <>
+                  <span className="text-xs font-bold" style={{ color: 'var(--c-brand)' }}>
+                    {bulkSelected.length} seleccionada{bulkSelected.length === 1 ? '' : 's'}
+                  </span>
+                  <button
+                    onClick={() => setBulkSelected(entries.map(en => en.id))}
+                    className="text-xs px-2 py-1 rounded-lg active:opacity-70"
+                    style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text-muted)' }}
+                  >Todas</button>
+                  <button
+                    onClick={() => setBulkSelected([])}
+                    className="text-xs px-2 py-1 rounded-lg active:opacity-70"
+                    style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text-muted)' }}
+                  >Ninguna</button>
+                  <button
+                    onClick={exitBulk}
+                    className="text-xs px-2 py-1 rounded-lg ml-auto active:opacity-70"
+                    style={{ color: 'var(--c-text-muted)' }}
+                  >Cancelar</button>
+                </>
+              )}
+            </div>
+          )}
+          {showEntries && (
             <div className="flex flex-col gap-1 mt-2 max-h-96 overflow-y-auto">
               {[...entries].sort((a, b) => b.timestamp.localeCompare(a.timestamp)).map(e => {
                 const memberName = members.find(m => m.id === e.member)?.name ?? e.member
                 const counter = counters.find(c => c.id === e.counter)
                 const isConfirming = deleteEntryConfirm === e.id
                 const isEditing = editingEntry === e.id
+                const isSelected = bulkSelected.includes(e.id)
                 return (
                   <div
                     key={e.id}
                     className="rounded-xl px-3 py-2"
-                    style={
-                      isConfirming
+                    onClick={bulkMode ? () => toggleBulk(e.id) : undefined}
+                    style={{
+                      cursor: bulkMode ? 'pointer' : 'default',
+                      ...(isConfirming
                         ? { background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }
-                        : { background: 'var(--c-surface)', border: '1px solid var(--c-border)' }
-                    }
+                        : bulkMode && isSelected
+                          ? { background: 'rgba(232,97,58,0.08)', border: '1.5px solid rgba(232,97,58,0.4)' }
+                          : { background: 'var(--c-surface)', border: '1px solid var(--c-border)' }),
+                    }}
                   >
                     <div className="flex items-center gap-2">
+                      {bulkMode && (
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {}}
+                          className="w-4 h-4 flex-shrink-0"
+                          style={{ accentColor: 'var(--c-brand)', pointerEvents: 'none' }}
+                        />
+                      )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-sm font-medium" style={{ color: 'var(--c-text)' }}>{memberName}</span>
@@ -489,7 +571,7 @@ export default function AdminScreen() {
                           {e.note && <span className="italic">"{e.note}"</span>}
                         </div>
                       </div>
-                      {isConfirming ? (
+                      {!bulkMode && (isConfirming ? (
                         <div className="flex gap-1.5 flex-shrink-0">
                           <button
                             onClick={() => setDeleteEntryConfirm(null)}
@@ -519,9 +601,9 @@ export default function AdminScreen() {
                             style={{ color: 'var(--c-text-muted)' }}
                           >✕</button>
                         </div>
-                      )}
+                      ))}
                     </div>
-                    {isEditing && (
+                    {isEditing && !bulkMode && (
                       <EntryEditForm
                         entry={e}
                         onSave={patch => {
@@ -535,6 +617,44 @@ export default function AdminScreen() {
                   </div>
                 )
               })}
+            </div>
+          )}
+
+          {/* Bulk edit panel */}
+          {showEntries && bulkMode && bulkSelected.length > 0 && (
+            <div
+              className="rounded-xl p-3 mt-2 flex flex-col gap-2.5"
+              style={{ background: 'var(--c-surface)', border: '1.5px solid rgba(232,97,58,0.35)' }}
+            >
+              <label className="text-xs flex flex-col gap-1" style={{ color: 'var(--c-text-muted)' }}>
+                📅 Nueva fecha (cada entrada conserva su hora)
+                <input
+                  type="date"
+                  value={bulkDate}
+                  onChange={e => setBulkDate(e.target.value)}
+                  className="rounded-lg px-2 py-1.5 text-sm outline-none"
+                  style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
+                />
+              </label>
+              <label className="text-xs flex flex-col gap-1" style={{ color: 'var(--c-text-muted)' }}>
+                📍 Nuevo lugar (opcional — deja vacío para no tocarlo)
+                <input
+                  type="text"
+                  value={bulkPlace}
+                  onChange={e => setBulkPlace(e.target.value)}
+                  placeholder="p. ej. Chiringuito de la cala"
+                  className="rounded-lg px-2 py-1.5 text-sm outline-none"
+                  style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
+                />
+              </label>
+              <button
+                onClick={applyBulk}
+                disabled={!bulkDate && !bulkPlace.trim()}
+                className="w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-40 active:opacity-80"
+                style={{ background: 'var(--c-brand)', color: '#fff' }}
+              >
+                Aplicar a {bulkSelected.length} entrada{bulkSelected.length === 1 ? '' : 's'} ✓
+              </button>
             </div>
           )}
         </div>

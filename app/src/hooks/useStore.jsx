@@ -176,7 +176,14 @@ function reducer(state, action) {
       return { ...state, syncLog: log }
     }
 
+    // ── Identity ──
+    case 'SET_CURRENT_MEMBER':
+      next = { ...state, currentMemberId: action.id }
+      break
+
     // ── UI ──
+    case 'SET_STATS_MEMBER':
+      return { ...state, statsMember: action.id }
     case 'SET_ACTIVE_SCREEN':
       return { ...state, activeScreen: action.screen }
     case 'SET_PROFILE_MODAL':
@@ -217,6 +224,7 @@ function buildInitialState() {
     sessionSwitcherOpen: false,
     taunt: null,
     syncLog: [],
+    statsMember: null,
   }
 }
 

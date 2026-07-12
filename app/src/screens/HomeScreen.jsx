@@ -1,10 +1,45 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useStore, useDispatch, useNavigate } from '../hooks/useStore.jsx'
-import { useMember } from '../hooks/useMember.js'
+import { useMember, switchMember } from '../hooks/useMember.js'
 import CounterCard from '../components/CounterCard.jsx'
 import MemberAvatar from '../components/MemberAvatar.jsx'
 import UndoToast from '../components/UndoToast.jsx'
-import { getChampion, getDonkey, getStreaks } from '../lib/gamification.js'
+import { getChampion, getDonkey, getStreaks, rankMedal } from '../lib/gamification.js'
+
+// Shown when the app is opened without a valid identity — no personal link,
+// or a link pointing at a member that doesn't exist
+function WhoAreYou({ members, dispatch }) {
+  const [choice, setChoice] = useState('')
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-4 px-6 text-center">
+      <div className="text-5xl">🕵️</div>
+      <h2 className="text-xl font-extrabold" style={{ color: 'var(--c-text)' }}>¿Y tú quién eres?</h2>
+      <p className="text-sm max-w-[260px]" style={{ color: 'var(--c-text-muted)' }}>
+        Sin acusar a nadie, pero aquí los helados no se apuntan solos.
+      </p>
+      <select
+        value={choice}
+        onChange={e => setChoice(e.target.value)}
+        className="w-full max-w-[260px] rounded-2xl px-4 py-3 text-base font-bold outline-none"
+        style={{ background: 'var(--c-surface)', color: 'var(--c-text)', border: '1.5px solid var(--c-border)' }}
+      >
+        <option value="">Elige tu nombre…</option>
+        {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+      </select>
+      <button
+        disabled={!choice}
+        onClick={() => switchMember(dispatch, choice)}
+        className="w-full max-w-[260px] px-6 py-3 rounded-2xl font-bold text-base disabled:opacity-40 active:opacity-80 transition-opacity"
+        style={{ background: 'var(--c-brand)', color: '#fff' }}
+      >
+        Ese soy yo ✓
+      </button>
+      <p className="text-[11px]" style={{ color: 'var(--c-text-muted)' }}>
+        Se recuerda en este dispositivo. Nada de suplantar al campeón.
+      </p>
+    </div>
+  )
+}
 
 export default function HomeScreen() {
   const { counters, members, entries, sessions, adminUnlocked } = useStore()
@@ -19,6 +54,11 @@ export default function HomeScreen() {
   function handleQuickAdd(counterId) {
     dispatch({ type: 'ADD_ENTRY', memberId, counterId, qty: 1 })
     window.dispatchEvent(new CustomEvent('counter-ops:sync'))
+  }
+
+  function openStats(id) {
+    dispatch({ type: 'SET_STATS_MEMBER', id })
+    navigate('stats')
   }
 
   // No sessions yet
@@ -55,14 +95,25 @@ export default function HomeScreen() {
   }
 
   if (!memberId) {
+    // Members exist → ask who you are; otherwise nothing to pick from yet
+    if (members.length > 0) {
+      return <WhoAreYou members={members} dispatch={dispatch} />
+    }
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 px-6 text-center">
         <div className="text-5xl">🏖️</div>
         <h1 className="text-2xl font-extrabold" style={{ color: 'var(--c-text)' }}>Counter Ops</h1>
-        <p style={{ color: 'var(--c-text-muted)' }}>Abre tu enlace personal para empezar, o pídeselo al admin (con buenos modales).</p>
+        <p style={{ color: 'var(--c-text-muted)' }}>Aún no hay miembros. Pídele al admin que monte el equipo.</p>
       </div>
     )
   }
+
+  const ranking = [...members]
+    .map(m => ({
+      ...m,
+      total: entries.filter(e => e.member === m.id).reduce((s, e) => s + (e.qty || 1), 0),
+    }))
+    .sort((a, b) => b.total - a.total)
 
   return (
     <div className="pb-6" style={{ background: 'var(--c-bg)' }}>
@@ -80,41 +131,40 @@ export default function HomeScreen() {
               ? `👑 ${members.find(m => m.id === champion.memberId)?.name ?? '?'} manda hoy · 🐴 ${members.find(m => m.id === donkey.memberId)?.name ?? '?'} ya sabe lo que hay`
               : 'Aquí nadie compite. Ja.'}
           </p>
-          <div className="flex gap-5 overflow-x-auto pb-1">
-            {[...members]
-              .map(m => ({
-                ...m,
-                total: entries.filter(e => e.member === m.id).reduce((s, e) => s + (e.qty || 1), 0),
-              }))
-              .sort((a, b) => b.total - a.total)
-              .map(m => {
-                const isChampion = champion?.memberId === m.id
-                const isDonkey   = donkey?.memberId   === m.id
-                const streak     = streaks[m.id]
-                return (
-                  <div key={m.id} className="flex flex-col items-center gap-1 flex-shrink-0">
-                    <div className="relative">
-                      <MemberAvatar member={m} memberId={m.id} size="lg" showBadges />
-                      {isChampion && (
-                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-base leading-none">👑</span>
-                      )}
-                      {isDonkey && !isChampion && (
-                        <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-sm leading-none">🐴</span>
-                      )}
+          <div className="flex flex-col gap-2">
+            {ranking.map((m, i) => {
+              const medal = rankMedal(i, ranking.length, m.total, m.id, champion?.memberId, donkey?.memberId)
+              const streak = streaks[m.id]
+              const isLead = i === 0 && m.total > 0
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => openStats(m.id)}
+                  className="flex items-center gap-3 px-3 py-2 rounded-2xl text-left active:opacity-70 transition-opacity w-full"
+                  style={{
+                    background: isLead ? 'rgba(232,97,58,0.08)' : 'var(--c-surface)',
+                    border: isLead ? '1.5px solid rgba(232,97,58,0.25)' : '1px solid var(--c-border)',
+                  }}
+                >
+                  <MemberAvatar member={m} memberId={m.id} size="md" showBadges={false} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-extrabold truncate" style={{ color: 'var(--c-text)' }}>
+                      {m.name}{medal ? ` ${medal}` : ''}
                     </div>
-                    <span className="text-xs font-semibold" style={{ color: 'var(--c-text)' }}>{m.name}</span>
-                    <span
-                      className="text-xl font-black leading-none"
-                      style={{ color: isChampion ? 'var(--c-brand)' : 'var(--c-text)' }}
-                    >
-                      {m.total}
-                    </span>
                     {streak && (
-                      <span className="text-[10px] text-orange-500">🔥 racha de {streak.days} días</span>
+                      <div className="text-[10px] text-orange-500">🔥 racha de {streak.days} días</div>
                     )}
                   </div>
-                )
-              })}
+                  <span
+                    className="text-xl font-black leading-none"
+                    style={{ color: isLead ? 'var(--c-brand)' : 'var(--c-text)' }}
+                  >
+                    {m.total}
+                  </span>
+                  <span className="text-base" style={{ color: 'var(--c-text-muted)' }}>›</span>
+                </button>
+              )
+            })}
           </div>
         </div>
       )}

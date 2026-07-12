@@ -42,10 +42,21 @@ function IcoChart({ color }) {
   )
 }
 
+function IcoStats({ color }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <circle cx="9" cy="7" r="3.5" stroke={color} strokeWidth="2"/>
+      <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+      <path d="M17 11v-3M20 11V5" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
 const NAV = [
   { screen: 'home',    label: 'Inicio',   Icon: IcoHome  },
   { screen: 'log',     label: 'Apuntar',  Icon: IcoPlus  },
   { screen: 'entries', label: 'Registro', Icon: IcoList  },
+  { screen: 'stats',   label: 'Stats',    Icon: IcoStats },
   { screen: 'report',  label: 'Informe',  Icon: IcoChart },
 ]
 

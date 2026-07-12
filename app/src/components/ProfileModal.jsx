@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom'
 import { useStore, useDispatch } from '../hooks/useStore.jsx'
-import { useMember } from '../hooks/useMember.js'
+import { useMember, switchMember } from '../hooks/useMember.js'
 import { compressAvatar } from '../lib/imageCompress.js'
 
 export default function ProfileModal() {
@@ -53,6 +53,14 @@ export default function ProfileModal() {
 
   function close() {
     dispatch({ type: 'SET_PROFILE_MODAL', open: false })
+  }
+
+  function handleSwitch(id) {
+    if (!id || id === memberId) return
+    switchMember(dispatch, id)
+    const m = members.find(x => x.id === id)
+    setName(m?.name ?? id)
+    setAvatarPreview(m?.avatar ?? null)
   }
 
   if (!profileModalOpen) return null
@@ -126,6 +134,26 @@ export default function ProfileModal() {
             }}
           />
         </div>
+
+        {/* Switch user */}
+        {members.length > 1 && (
+          <div
+            className="mb-5 rounded-xl px-3 py-2.5 flex items-center justify-between gap-2"
+            style={{ background: 'var(--c-surface-2)' }}
+          >
+            <span className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
+              🔄 ¿No eres {member?.name ?? memberId}?
+            </span>
+            <select
+              value={memberId}
+              onChange={e => handleSwitch(e.target.value)}
+              className="text-xs font-bold rounded-lg px-2 py-1.5 outline-none"
+              style={{ background: 'var(--c-surface)', color: 'var(--c-text)', border: '1px solid var(--c-border)' }}
+            >
+              {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
+          </div>
+        )}
 
         <button
           onClick={handleSave}
