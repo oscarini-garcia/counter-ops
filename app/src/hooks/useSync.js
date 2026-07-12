@@ -50,4 +50,19 @@ export function useSync() {
     window.addEventListener('online', doSync)
     return () => window.removeEventListener('online', doSync)
   }, [state])
+
+  // iOS freezes the PWA in the background and never remounts it on return,
+  // so without these the app only syncs on cold start or when logging —
+  // other people's counters/entries would sit invisible for hours
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') doSync() }
+    document.addEventListener('visibilitychange', onVisible)
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') doSync()
+    }, 60000)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      clearInterval(interval)
+    }
+  }, [state])
 }

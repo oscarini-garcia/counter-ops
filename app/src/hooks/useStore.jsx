@@ -5,6 +5,13 @@ import { generateEntryId } from '../lib/ids.js'
 const StoreContext = createContext(null)
 const DispatchContext = createContext(null)
 
+// Tombstones may be legacy plain ids or { id, ts } objects
+const tombId = t => (typeof t === 'string' ? t : t?.id)
+
+function addTombstone(list = [], id) {
+  return [...list.filter(t => tombId(t) !== id), { id, ts: new Date().toISOString() }]
+}
+
 // Helper: update the active session immutably
 function updateActive(state, updater) {
   const sessions = state.sessions.map(s =>
@@ -59,12 +66,17 @@ function reducer(state, action) {
       next = { ...next, undoEntry: { entry, expiresAt: Date.now() + 3000 } }
       break
     }
-    case 'UNDO_ENTRY':
+    case 'UNDO_ENTRY': {
+      // The entry may already be pushed remotely (sync fires on add), so the
+      // undo needs a tombstone or the next pull would resurrect it
+      const undoId = state.undoEntry?.entry?.id
       next = updateActive(state, s => ({
-        entries: s.entries.filter(e => e.id !== state.undoEntry?.entry?.id),
+        entries: s.entries.filter(e => e.id !== undoId),
+        deletedEntryIds: undoId ? addTombstone(s.deletedEntryIds, undoId) : s.deletedEntryIds,
       }))
       next = { ...next, undoEntry: null }
       break
+    }
 
     case 'UPDATE_ENTRY':
       next = updateActive(state, s => ({
@@ -77,7 +89,7 @@ function reducer(state, action) {
     case 'REMOVE_ENTRY':
       next = updateActive(state, s => ({
         entries: s.entries.filter(e => e.id !== action.id),
-        deletedEntryIds: Array.from(new Set([...(s.deletedEntryIds ?? []), action.id])),
+        deletedEntryIds: addTombstone(s.deletedEntryIds, action.id),
       }))
       break
 
@@ -88,10 +100,14 @@ function reducer(state, action) {
     case 'UPSERT_MEMBER':
       next = updateActive(state, s => {
         const exists = s.members.find(m => m.id === action.member.id)
+        const member = { ...action.member, updatedAt: new Date().toISOString() }
         return {
           members: exists
-            ? s.members.map(m => m.id === action.member.id ? { ...m, ...action.member } : m)
-            : [...s.members, action.member]
+            ? s.members.map(m => m.id === member.id ? { ...m, ...member } : m)
+            : [...s.members, member],
+          // Re-creating a previously deleted member lifts its tombstone,
+          // otherwise the merge would silently erase it everywhere
+          deletedMemberIds: (s.deletedMemberIds ?? []).filter(t => tombId(t) !== member.id),
         }
       })
       break
@@ -99,7 +115,7 @@ function reducer(state, action) {
     case 'REMOVE_MEMBER':
       next = updateActive(state, s => ({
         members: s.members.filter(m => m.id !== action.id),
-        deletedMemberIds: Array.from(new Set([...(s.deletedMemberIds ?? []), action.id])),
+        deletedMemberIds: addTombstone(s.deletedMemberIds, action.id),
       }))
       break
 
@@ -124,10 +140,14 @@ function reducer(state, action) {
     case 'UPSERT_COUNTER':
       next = updateActive(state, s => {
         const exists = s.counters.find(c => c.id === action.counter.id)
+        const counter = { ...action.counter, updatedAt: new Date().toISOString() }
         return {
           counters: exists
-            ? s.counters.map(c => c.id === action.counter.id ? { ...c, ...action.counter } : c)
-            : [...s.counters, action.counter]
+            ? s.counters.map(c => c.id === counter.id ? { ...c, ...counter } : c)
+            : [...s.counters, counter],
+          // Re-creating a previously deleted counter lifts its tombstone,
+          // otherwise the merge would silently erase it everywhere
+          deletedCounterIds: (s.deletedCounterIds ?? []).filter(t => tombId(t) !== counter.id),
         }
       })
       break
@@ -135,7 +155,7 @@ function reducer(state, action) {
     case 'REMOVE_COUNTER':
       next = updateActive(state, s => ({
         counters: s.counters.filter(c => c.id !== action.id),
-        deletedCounterIds: Array.from(new Set([...(s.deletedCounterIds ?? []), action.id])),
+        deletedCounterIds: addTombstone(s.deletedCounterIds, action.id),
       }))
       break
 

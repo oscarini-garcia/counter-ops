@@ -58,12 +58,36 @@ export function saveStore(state) {
 
 // ── Per-session merge helpers ──
 
-export function mergeEntries(local = [], remote = [], deletedIds = []) {
-  const deleted = new Set(deletedIds)
+// Tombstones are either plain ids (legacy) or { id, ts } (timestamped).
+// An item edited/re-created AFTER its deletion (item.updatedAt > tombstone ts)
+// survives; legacy string tombstones have ts '' so any updatedAt lifts them.
+export function tombstoneMap(deletedIds = []) {
   const map = new Map()
-  for (const e of local) if (!deleted.has(e.id)) map.set(e.id, e)
+  for (const t of deletedIds) {
+    const id = typeof t === 'string' ? t : t?.id
+    if (!id) continue
+    const ts = typeof t === 'string' ? '' : (t.ts ?? '')
+    if (!map.has(id) || ts > map.get(id)) map.set(id, ts)
+  }
+  return map
+}
+
+function isDeleted(tombs, item) {
+  if (!tombs.has(item.id)) return false
+  return !((item.updatedAt ?? '') > tombs.get(item.id))
+}
+
+export function unionTombstones(a = [], b = []) {
+  const map = tombstoneMap([...a, ...b])
+  return Array.from(map.entries()).map(([id, ts]) => (ts ? { id, ts } : id))
+}
+
+export function mergeEntries(local = [], remote = [], deletedIds = []) {
+  const tombs = tombstoneMap(deletedIds)
+  const map = new Map()
+  for (const e of local) if (!isDeleted(tombs, e)) map.set(e.id, e)
   for (const e of remote) {
-    if (deleted.has(e.id)) continue
+    if (isDeleted(tombs, e)) continue
     const cur = map.get(e.id)
     if (!cur) map.set(e.id, e)
     // Admin edits carry updatedAt — the most recent edit wins across devices
@@ -73,24 +97,30 @@ export function mergeEntries(local = [], remote = [], deletedIds = []) {
 }
 
 export function mergeMembers(local = [], remote = [], deletedIds = []) {
-  const deleted = new Set(deletedIds)
+  const tombs = tombstoneMap(deletedIds)
   const map = new Map(local.map(m => [m.id, m]))
   for (const m of remote) {
-    if (deleted.has(m.id)) continue                          // tombstone wins
-    if (!map.has(m.id)) map.set(m.id, m)
-    else if (!map.get(m.id).avatar && m.avatar) map.set(m.id, { ...map.get(m.id), avatar: m.avatar })
+    if (isDeleted(tombs, m)) continue
+    const cur = map.get(m.id)
+    if (!cur) map.set(m.id, m)
+    // Edits carry updatedAt — the most recent edit wins across devices
+    else if ((m.updatedAt ?? '') > (cur.updatedAt ?? '')) map.set(m.id, m)
+    else if (!cur.avatar && m.avatar) map.set(m.id, { ...cur, avatar: m.avatar })
   }
-  return Array.from(map.values()).filter(m => !deleted.has(m.id))
+  return Array.from(map.values()).filter(m => !isDeleted(tombs, m))
 }
 
 export function mergeCounters(local = [], remote = [], deletedIds = []) {
-  const deleted = new Set(deletedIds)
+  const tombs = tombstoneMap(deletedIds)
   const map = new Map(local.map(c => [c.id, c]))
   for (const c of remote) {
-    if (deleted.has(c.id)) continue                          // tombstone wins
-    if (!map.has(c.id)) map.set(c.id, c)
+    if (isDeleted(tombs, c)) continue
+    const cur = map.get(c.id)
+    if (!cur) map.set(c.id, c)
+    // Edits carry updatedAt — the most recent edit wins across devices
+    else if ((c.updatedAt ?? '') > (cur.updatedAt ?? '')) map.set(c.id, c)
   }
-  return Array.from(map.values()).filter(c => !deleted.has(c.id))
+  return Array.from(map.values()).filter(c => !isDeleted(tombs, c))
 }
 
 export function mergeSessions(local = [], remote = []) {
@@ -99,9 +129,9 @@ export function mergeSessions(local = [], remote = []) {
     if (map.has(rs.id)) {
       const ls = map.get(rs.id)
       // Union tombstone lists so deletes propagate across devices
-      const deletedMemberIds = Array.from(new Set([...(ls.deletedMemberIds ?? []), ...(rs.deletedMemberIds ?? [])]))
-      const deletedCounterIds = Array.from(new Set([...(ls.deletedCounterIds ?? []), ...(rs.deletedCounterIds ?? [])]))
-      const deletedEntryIds = Array.from(new Set([...(ls.deletedEntryIds ?? []), ...(rs.deletedEntryIds ?? [])]))
+      const deletedMemberIds = unionTombstones(ls.deletedMemberIds, rs.deletedMemberIds)
+      const deletedCounterIds = unionTombstones(ls.deletedCounterIds, rs.deletedCounterIds)
+      const deletedEntryIds = unionTombstones(ls.deletedEntryIds, rs.deletedEntryIds)
       map.set(rs.id, {
         ...rs,
         name: ls.name,        // local name wins
