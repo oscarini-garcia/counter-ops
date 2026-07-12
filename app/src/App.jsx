@@ -34,7 +34,7 @@ export default function App() {
     <StoreProvider>
       <SyncBootstrap />
       <AppShell>
-        <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-400">Loading…</div>}>
+        <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-400">Cargando… (los helados no se cuentan solos)</div>}>
           <ScreenRouter />
         </Suspense>
       </AppShell>

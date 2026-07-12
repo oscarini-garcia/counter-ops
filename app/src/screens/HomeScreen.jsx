@@ -26,27 +26,27 @@ export default function HomeScreen() {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 px-6 text-center">
         <div className="text-5xl">🏖️</div>
-        <h2 className="text-xl font-extrabold" style={{ color: 'var(--c-text)' }}>No sessions yet</h2>
+        <h2 className="text-xl font-extrabold" style={{ color: 'var(--c-text)' }}>Aún no hay sesiones</h2>
         {adminUnlocked ? (
           <>
-            <p className="text-sm" style={{ color: 'var(--c-text-muted)' }}>Create a session to start tracking.</p>
+            <p className="text-sm" style={{ color: 'var(--c-text-muted)' }}>Crea una sesión para empezar a llevar la cuenta (y las cuentas).</p>
             <button
               onClick={() => dispatch({ type: 'SET_SESSION_SWITCHER', open: true })}
               className="px-6 py-3 rounded-2xl font-bold text-base active:opacity-80 transition-opacity"
               style={{ background: 'var(--c-brand)', color: '#fff' }}
             >
-              + Create session
+              + Crear sesión
             </button>
           </>
         ) : (
           <>
-            <p className="text-sm" style={{ color: 'var(--c-text-muted)' }}>Go to Settings to unlock admin, then create a session.</p>
+            <p className="text-sm" style={{ color: 'var(--c-text-muted)' }}>Ve a Ajustes para desbloquear el modo admin y luego crea una sesión.</p>
             <button
               onClick={() => navigate('settings')}
               className="px-6 py-3 rounded-2xl font-bold text-base active:opacity-80"
               style={{ background: 'var(--c-surface-2)', color: 'var(--c-text)' }}
             >
-              ⚙️ Settings
+              ⚙️ Ajustes
             </button>
           </>
         )}
@@ -59,7 +59,7 @@ export default function HomeScreen() {
       <div className="flex flex-col items-center justify-center h-full gap-4 px-6 text-center">
         <div className="text-5xl">🏖️</div>
         <h1 className="text-2xl font-extrabold" style={{ color: 'var(--c-text)' }}>Counter Ops</h1>
-        <p style={{ color: 'var(--c-text-muted)' }}>Open your personal link to get started, or ask the admin for one.</p>
+        <p style={{ color: 'var(--c-text-muted)' }}>Abre tu enlace personal para empezar, o pídeselo al admin (con buenos modales).</p>
       </div>
     )
   }
@@ -70,11 +70,16 @@ export default function HomeScreen() {
       {members.length > 0 && (
         <div className="px-4 py-4" style={{ borderBottom: '1px solid var(--c-border)' }}>
           <h2
-            className="text-xs font-bold uppercase tracking-wider mb-3"
+            className="text-xs font-bold uppercase tracking-wider"
             style={{ color: 'var(--c-text-muted)' }}
           >
-            Scoreboard
+            Marcador
           </h2>
+          <p className="text-[11px] italic mb-3 mt-0.5" style={{ color: 'var(--c-text-muted)' }}>
+            {champion && donkey
+              ? `👑 ${members.find(m => m.id === champion.memberId)?.name ?? '?'} manda hoy · 🐴 ${members.find(m => m.id === donkey.memberId)?.name ?? '?'} ya sabe lo que hay`
+              : 'Aquí nadie compite. Ja.'}
+          </p>
           <div className="flex gap-5 overflow-x-auto pb-1">
             {[...members]
               .map(m => ({
@@ -105,7 +110,7 @@ export default function HomeScreen() {
                       {m.total}
                     </span>
                     {streak && (
-                      <span className="text-[10px] text-orange-500">🔥 {streak.days}d</span>
+                      <span className="text-[10px] text-orange-500">🔥 racha de {streak.days} días</span>
                     )}
                   </div>
                 )
@@ -118,15 +123,15 @@ export default function HomeScreen() {
       <div className="px-4 pt-4">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
-            Quick Add
+            Apuntar rápido
           </h2>
-          <span className="text-xs" style={{ color: 'var(--c-text-muted)' }}>Tap to +1</span>
+          <span className="text-xs" style={{ color: 'var(--c-text-muted)' }}>Toca para +1 · el ranking nunca olvida</span>
         </div>
 
         {counters.length === 0 ? (
           <div className="text-center py-12" style={{ color: 'var(--c-text-muted)' }}>
             <div className="text-4xl mb-2">🧮</div>
-            <p className="text-sm">No counters yet. Ask the admin to add some.</p>
+            <p className="text-sm">Aún no hay contadores. Dile al admin que espabile.</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">

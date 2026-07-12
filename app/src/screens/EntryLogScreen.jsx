@@ -31,7 +31,7 @@ export default function EntryLogScreen() {
           className="text-sm rounded-lg px-2 py-1.5 outline-none"
           style={selectStyle}
         >
-          <option value="">All members</option>
+          <option value="">Todo el mundo</option>
           {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
         </select>
         <select
@@ -40,7 +40,7 @@ export default function EntryLogScreen() {
           className="text-sm rounded-lg px-2 py-1.5 outline-none"
           style={selectStyle}
         >
-          <option value="">All counters</option>
+          <option value="">Todos los contadores</option>
           {counters.map(c => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
         </select>
       </div>
@@ -50,7 +50,7 @@ export default function EntryLogScreen() {
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-2" style={{ color: 'var(--c-text-muted)' }}>
             <div className="text-4xl">📋</div>
-            <p className="text-sm">No entries yet.</p>
+            <p className="text-sm">Aún no hay nada apuntado. Sospechosamente sano.</p>
           </div>
         ) : (
           filtered.map(e => <EntryRow key={e.id} entry={e} />)

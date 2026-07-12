@@ -58,11 +58,11 @@ export default function LogEntryScreen() {
       className="px-4 py-5 flex flex-col gap-5 max-w-lg mx-auto"
       style={{ background: 'var(--c-bg)' }}
     >
-      <h1 className="text-xl font-black" style={{ color: 'var(--c-text)' }}>Log Entry</h1>
+      <h1 className="text-xl font-black" style={{ color: 'var(--c-text)' }}>Apuntar consumo</h1>
 
       {/* Who */}
       <div>
-        <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--c-text-muted)' }}>Who</label>
+        <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--c-text-muted)' }}>¿Quién ha sido?</label>
         <div className="flex flex-wrap gap-2">
           {members.map(m => (
             <button key={m.id} type="button" onClick={() => setSelectedMember(m.id)} style={chip(selectedMember === m.id)}>
@@ -74,7 +74,7 @@ export default function LogEntryScreen() {
 
       {/* What */}
       <div>
-        <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--c-text-muted)' }}>What</label>
+        <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--c-text-muted)' }}>El cuerpo del delito</label>
         <div className="flex flex-wrap gap-2">
           {counters.map(c => (
             <button key={c.id} type="button" onClick={() => setSelectedCounter(c.id)} style={chip(selectedCounter === c.id)}>
@@ -86,7 +86,7 @@ export default function LogEntryScreen() {
 
       {/* How many */}
       <div>
-        <label className="block text-xs font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--c-text-muted)' }}>How many</label>
+        <label className="block text-xs font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--c-text-muted)' }}>¿Cuántos? (sé sincero)</label>
         <div className="flex items-center gap-5">
           <button
             type="button"
@@ -110,10 +110,10 @@ export default function LogEntryScreen() {
 
       {/* Where */}
       <div>
-        <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--c-text-muted)' }}>Where</label>
+        <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--c-text-muted)' }}>Escenario de los hechos</label>
         {gpsStatus === 'resolving' && (
           <div className="text-sm flex items-center gap-2" style={{ color: 'var(--c-text-muted)' }}>
-            <span className="animate-spin inline-block">↻</span> Getting location…
+            <span className="animate-spin inline-block">↻</span> Localizando… (preparando la coartada)
           </div>
         )}
         {gpsStatus === 'resolved' && location && !manualLocation && (
@@ -132,7 +132,7 @@ export default function LogEntryScreen() {
         )}
         {showFallback && recentLocations.length > 0 && !manualLocation && (
           <div>
-            <p className="text-xs mb-1.5" style={{ color: 'var(--c-text-muted)' }}>GPS unavailable — tap a recent location:</p>
+            <p className="text-xs mb-1.5" style={{ color: 'var(--c-text-muted)' }}>Sin GPS — toca un sitio reciente (de los de siempre):</p>
             <div className="flex flex-col gap-1">
               {recentLocations.map((loc, i) => (
                 <button
@@ -150,12 +150,12 @@ export default function LogEntryScreen() {
 
       {/* Note */}
       <div>
-        <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--c-text-muted)' }}>Note (optional)</label>
+        <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--c-text-muted)' }}>Nota (opcional)</label>
         <input
           type="text"
           value={note}
           onChange={e => setNote(e.target.value)}
-          placeholder="e.g. shared with Ana"
+          placeholder="p. ej. compartido con Ana (ya, claro)"
           className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
           style={{
             background: 'var(--c-surface)',
@@ -167,14 +167,14 @@ export default function LogEntryScreen() {
 
       {/* Rating */}
       <div>
-        <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--c-text-muted)' }}>Rating (optional)</label>
+        <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--c-text-muted)' }}>Valoración (opcional)</label>
         <div className="flex gap-2">
           {[1, 2, 3, 4, 5].map(star => (
             <button
               key={star} type="button"
               onClick={() => setRating(rating === star ? null : star)}
               className="text-3xl leading-none active:scale-110 transition-transform"
-              aria-label={`${star} star`}
+              aria-label={`${star} ${star === 1 ? 'estrella' : 'estrellas'}`}
             >
               {star <= (rating ?? 0) ? '⭐' : '☆'}
             </button>
@@ -189,7 +189,7 @@ export default function LogEntryScreen() {
         className="w-full font-bold py-4 rounded-2xl text-base disabled:opacity-40 active:opacity-80 transition-opacity mt-1"
         style={{ background: 'var(--c-brand)', color: '#fff', fontSize: 16 }}
       >
-        Log It ✓
+        Que conste en acta ✓
       </button>
 
       <UndoToast />

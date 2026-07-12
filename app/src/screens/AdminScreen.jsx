@@ -13,13 +13,15 @@ function slugify(str) {
 
 function suggestEmoji(label) {
   const l = label.toLowerCase()
-  if (l.includes('ice') || l.includes('cream') || l.includes('granit')) return '🍦'
-  if (l.includes('pomada') || l.includes('cocktail')) return '🍹'
-  if (l.includes('beer') || l.includes('cerve')) return '🍺'
-  if (l.includes('coffee') || l.includes('café')) return '☕'
+  if (l.includes('ice') || l.includes('cream') || l.includes('granit') || l.includes('helado') || l.includes('graniz')) return '🍦'
+  if (l.includes('pomada') || l.includes('cocktail') || l.includes('cóctel') || l.includes('coctel')) return '🍹'
+  if (l.includes('beer') || l.includes('cerve') || l.includes('caña')) return '🍺'
+  if (l.includes('coffee') || l.includes('café') || l.includes('cafe')) return '☕'
+  if (l.includes('vino') || l.includes('wine')) return '🍷'
   if (l.includes('pizza')) return '🍕'
-  if (l.includes('swim') || l.includes('pool')) return '🏊'
-  if (l.includes('walk') || l.includes('hike')) return '🚶'
+  if (l.includes('siesta')) return '😴'
+  if (l.includes('swim') || l.includes('pool') || l.includes('baño') || l.includes('piscina')) return '🏊'
+  if (l.includes('walk') || l.includes('hike') || l.includes('paseo') || l.includes('caminata')) return '🚶'
   return '🎯'
 }
 
@@ -57,7 +59,7 @@ function SortableRow({ item, index, total, onUp, onDown, onEdit, onDelete, child
           onClick={onEdit}
           className="text-xs px-2 py-1 rounded-lg active:opacity-70"
           style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', color: 'var(--c-text-muted)' }}
-        >Edit</button>
+        >Editar</button>
         <button
           onClick={onDelete}
           className="text-xs px-2 py-1 rounded-lg active:opacity-70"
@@ -99,7 +101,7 @@ function EditForm({ label: initLabel, emoji: initEmoji, showEmoji, onSave, onCan
         type="submit"
         className="text-xs px-2 py-1 font-semibold active:opacity-70"
         style={{ color: 'var(--c-brand)' }}
-      >Save</button>
+      >Guardar</button>
       <button
         type="button"
         onClick={onCancel}
@@ -166,11 +168,11 @@ export default function AdminScreen() {
 
   return (
     <div className="px-4 py-4 flex flex-col gap-6 max-w-lg mx-auto pb-8" style={{ background: 'var(--c-bg)' }}>
-      <h1 className="text-lg font-bold" style={{ color: 'var(--c-text)' }}>⚙️ Admin</h1>
+      <h1 className="text-lg font-bold" style={{ color: 'var(--c-text)' }}>⚙️ Panel de mando</h1>
 
       {/* ── COUNTERS ── */}
       <div>
-        <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--c-text-muted)' }}>Counters</h2>
+        <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--c-text-muted)' }}>Contadores</h2>
         <div className="flex flex-col gap-1.5 mb-3">
           {counters.map((c, i) => (
             <div key={c.id}>
@@ -196,18 +198,18 @@ export default function AdminScreen() {
                   className="rounded-xl px-4 py-3 flex items-center justify-between gap-3"
                   style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}
                 >
-                  <span className="text-sm" style={{ color: 'var(--c-danger)' }}>Delete <strong>{c.label}</strong>?</span>
+                  <span className="text-sm" style={{ color: 'var(--c-danger)' }}>¿Borrar <strong>{c.label}</strong>? Aquí no ha pasado nada…</span>
                   <div className="flex gap-2 flex-shrink-0">
                     <button
                       onClick={() => setDeleteConfirm(null)}
                       className="text-xs px-3 py-1.5 rounded-lg active:opacity-70"
                       style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
-                    >Cancel</button>
+                    >Cancelar</button>
                     <button
                       onClick={() => confirmDelete('counter', c.id)}
                       className="text-xs px-3 py-1.5 rounded-lg font-semibold active:opacity-80"
                       style={{ background: 'var(--c-danger)', color: '#fff' }}
-                    >Delete</button>
+                    >Borrar</button>
                   </div>
                 </div>
               ) : (
@@ -247,7 +249,7 @@ export default function AdminScreen() {
               setNewCounterLabel(e.target.value)
               if (!newCounterEmoji) setNewCounterEmoji(suggestEmoji(e.target.value))
             }}
-            placeholder="Counter name"
+            placeholder="Nombre del contador (p. ej. Helados)"
             className="flex-1 rounded-xl px-3 py-2 text-sm outline-none"
             style={inputStyle}
           />
@@ -256,14 +258,14 @@ export default function AdminScreen() {
             className="px-4 py-2 rounded-xl text-sm font-semibold active:opacity-80"
             style={{ background: 'var(--c-brand)', color: '#fff' }}
           >
-            Add
+            Añadir
           </button>
         </form>
       </div>
 
       {/* ── MEMBERS ── */}
       <div>
-        <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--c-text-muted)' }}>Family members</h2>
+        <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--c-text-muted)' }}>Miembros de la familia (los sospechosos habituales)</h2>
         <div className="flex flex-col gap-1.5 mb-3">
           {members.map((m, i) => {
             const expectedId = slugify(m.name)
@@ -291,7 +293,7 @@ export default function AdminScreen() {
                         style={{ borderTop: '1px solid var(--c-border)' }}
                       >
                         <span className="text-xs flex-1" style={{ color: 'var(--c-warning)' }}>
-                          Link ID is <span className="font-mono">{m.id}</span> — fix to <span className="font-mono">{expectedId}</span>?
+                          El ID del enlace es <span className="font-mono">{m.id}</span> — ¿corregir a <span className="font-mono">{expectedId}</span>?
                         </span>
                         <button
                           type="button"
@@ -303,7 +305,7 @@ export default function AdminScreen() {
                           className="text-xs px-3 py-1 rounded-lg font-semibold active:opacity-80 flex-shrink-0"
                           style={{ background: 'var(--c-warning)', color: '#fff' }}
                         >
-                          Fix ID
+                          Corregir ID
                         </button>
                       </div>
                     )}
@@ -313,18 +315,18 @@ export default function AdminScreen() {
                     className="rounded-xl px-4 py-3 flex items-center justify-between gap-3"
                     style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}
                   >
-                    <span className="text-sm" style={{ color: 'var(--c-danger)' }}>Delete <strong>{m.name}</strong>?</span>
+                    <span className="text-sm" style={{ color: 'var(--c-danger)' }}>¿Borrar a <strong>{m.name}</strong>? Sus helados irán al olvido.</span>
                     <div className="flex gap-2 flex-shrink-0">
                       <button
                         onClick={() => setDeleteConfirm(null)}
                         className="text-xs px-3 py-1.5 rounded-lg active:opacity-70"
                         style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
-                      >Cancel</button>
+                      >Cancelar</button>
                       <button
                         onClick={() => confirmDelete('member', m.id)}
                         className="text-xs px-3 py-1.5 rounded-lg font-semibold active:opacity-80"
                         style={{ background: 'var(--c-danger)', color: '#fff' }}
-                      >Delete</button>
+                      >Borrar</button>
                     </div>
                   </div>
                 ) : (
@@ -357,7 +359,7 @@ export default function AdminScreen() {
             type="text"
             value={newMemberName}
             onChange={e => setNewMemberName(e.target.value)}
-            placeholder="Member name"
+            placeholder="Nombre del miembro"
             className="flex-1 rounded-xl px-3 py-2 text-sm outline-none"
             style={inputStyle}
           />
@@ -366,7 +368,7 @@ export default function AdminScreen() {
             className="px-4 py-2 rounded-xl text-sm font-semibold active:opacity-80"
             style={{ background: 'var(--c-brand)', color: '#fff' }}
           >
-            Add
+            Añadir
           </button>
         </form>
       </div>
@@ -379,7 +381,7 @@ export default function AdminScreen() {
             className="w-full flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium active:opacity-80"
             style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
           >
-            <span>🗂 Entries ({entries.length})</span>
+            <span>🗂 Entradas ({entries.length})</span>
             <span style={{ color: 'var(--c-text-muted)' }}>{showEntries ? '▲' : '▼'}</span>
           </button>
           {showEntries && (
@@ -419,7 +421,7 @@ export default function AdminScreen() {
                           onClick={() => setDeleteEntryConfirm(null)}
                           className="text-xs px-2 py-1 rounded-lg active:opacity-70"
                           style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
-                        >Cancel</button>
+                        >Cancelar</button>
                         <button
                           onClick={() => {
                             dispatch({ type: 'REMOVE_ENTRY', id: e.id })
@@ -428,7 +430,7 @@ export default function AdminScreen() {
                           }}
                           className="text-xs px-2 py-1 rounded-lg font-semibold active:opacity-80"
                           style={{ background: 'var(--c-danger)', color: '#fff' }}
-                        >Delete</button>
+                        >Borrar</button>
                       </div>
                     ) : (
                       <button
@@ -453,7 +455,7 @@ export default function AdminScreen() {
             className="w-full flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium active:opacity-80"
             style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
           >
-            <span>📲 Member links & QR codes</span>
+            <span>📲 Enlaces y códigos QR de los miembros</span>
             <span style={{ color: 'var(--c-text-muted)' }}>{showQR ? '▲' : '▼'}</span>
           </button>
           {showQR && (

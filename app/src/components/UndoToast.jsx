@@ -29,13 +29,13 @@ export default function UndoToast() {
         className="flex items-center gap-3 rounded-2xl px-4 py-3 shadow-xl max-w-sm w-full"
         style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
       >
-        <span className="text-sm flex-1" style={{ color: 'var(--c-text)' }}>Entry logged ✓</span>
+        <span className="text-sm flex-1" style={{ color: 'var(--c-text)' }}>Consta en acta ✓</span>
         <button
           onClick={() => dispatch({ type: 'UNDO_ENTRY' })}
           className="text-sm font-semibold px-2 py-1 rounded-lg active:opacity-70"
           style={{ color: 'var(--c-brand)' }}
         >
-          Undo ({remaining}s)
+          Deshacer ({remaining}s)
         </button>
       </div>
     </div>,

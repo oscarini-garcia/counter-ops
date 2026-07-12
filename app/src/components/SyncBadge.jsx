@@ -8,9 +8,9 @@ export default function SyncBadge() {
     window.dispatchEvent(new CustomEvent('counter-ops:sync'))
   }
 
-  const label = syncStatus === 'synced' ? '✓ Synced'
-    : syncStatus === 'syncing' ? '↻ Sync…'
-    : '⚠ Sync'
+  const label = syncStatus === 'synced' ? '✓ Al día'
+    : syncStatus === 'syncing' ? '↻ Sinc…'
+    : '⚠ Sinc'
 
   const style = {
     display: 'flex', alignItems: 'center', gap: 4,
@@ -23,7 +23,7 @@ export default function SyncBadge() {
   }
 
   return (
-    <button onClick={handleTap} style={style} aria-label="Sync">
+    <button onClick={handleTap} style={style} aria-label="Sincronizar">
       {syncStatus === 'syncing' && (
         <span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>↻</span>
       )}

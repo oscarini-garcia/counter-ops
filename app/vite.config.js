@@ -32,7 +32,7 @@ export default defineConfig({
       manifest: {
         name: 'Counter Ops',
         short_name: 'Counter',
-        description: 'Family holiday counter app',
+        description: 'El contador familiar de vacaciones — helados, cañas y cero remordimientos',
         theme_color: '#6366f1',
         background_color: '#0f172a',
         display: 'standalone',

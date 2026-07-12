@@ -70,7 +70,7 @@ export default function ProfileModal() {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold" style={{ color: 'var(--c-text)' }}>Your Profile</h2>
+          <h2 className="text-lg font-bold" style={{ color: 'var(--c-text)' }}>Tu perfil</h2>
           <button
             onClick={close}
             className="text-xl w-8 h-8 flex items-center justify-center"
@@ -96,7 +96,7 @@ export default function ProfileModal() {
             className="text-sm active:opacity-70"
             style={{ color: 'var(--c-brand)' }}
           >
-            {compressing ? '⏳ Compressing…' : '📷 Change photo'}
+            {compressing ? '⏳ Comprimiendo…' : '📷 Cambiar foto'}
           </button>
           <input
             ref={fileRef}
@@ -113,7 +113,7 @@ export default function ProfileModal() {
           <label
             className="text-xs font-semibold uppercase tracking-wider block mb-1.5"
             style={{ color: 'var(--c-text-muted)' }}
-          >Display name</label>
+          >Nombre visible</label>
           <input
             type="text"
             value={name}
@@ -133,7 +133,7 @@ export default function ProfileModal() {
           className="w-full font-semibold py-3.5 rounded-2xl text-base disabled:opacity-40 active:opacity-80"
           style={{ background: 'var(--c-brand)', color: '#fff' }}
         >
-          Save
+          Guardar
         </button>
       </div>
     </div>,
