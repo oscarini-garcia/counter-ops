@@ -50,7 +50,7 @@ function reducer(state, action) {
         qty: action.qty ?? 1,
         rating: action.rating ?? null,   // 1-5 or null
         location: action.location ?? null,
-        timestamp: new Date().toISOString(),
+        timestamp: action.timestamp ?? new Date().toISOString(),
         note: action.note ?? '',
       }
       next = updateActive(state, s => ({
