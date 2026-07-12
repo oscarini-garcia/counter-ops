@@ -60,7 +60,13 @@ export function mergeEntries(local = [], remote = [], deletedIds = []) {
   const deleted = new Set(deletedIds)
   const map = new Map()
   for (const e of local) if (!deleted.has(e.id)) map.set(e.id, e)
-  for (const e of remote) { if (!deleted.has(e.id) && !map.has(e.id)) map.set(e.id, e) }
+  for (const e of remote) {
+    if (deleted.has(e.id)) continue
+    const cur = map.get(e.id)
+    if (!cur) map.set(e.id, e)
+    // Admin edits carry updatedAt — the most recent edit wins across devices
+    else if ((e.updatedAt ?? '') > (cur.updatedAt ?? '')) map.set(e.id, e)
+  }
   return Array.from(map.values()).sort((a, b) => a.timestamp.localeCompare(b.timestamp))
 }
 

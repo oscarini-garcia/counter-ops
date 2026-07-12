@@ -112,6 +112,76 @@ function EditForm({ label: initLabel, emoji: initEmoji, showEmoji, onSave, onCan
   )
 }
 
+// Format an ISO timestamp for <input type="datetime-local"> in local time
+function toLocalInputValue(iso) {
+  const d = new Date(iso)
+  const pad = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+// Inline editor for an entry's date and place
+function EntryEditForm({ entry, onSave, onCancel }) {
+  const [when, setWhen] = useState(toLocalInputValue(entry.timestamp))
+  const [place, setPlace] = useState(entry.location?.label ?? '')
+
+  const fieldStyle = {
+    background: 'var(--c-surface-2)',
+    border: '1px solid var(--c-border)',
+    color: 'var(--c-text)',
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault()
+    const parsed = when ? new Date(when) : null
+    const timestamp = parsed && !isNaN(parsed) ? parsed.toISOString() : entry.timestamp
+    const label = place.trim()
+    // Keep lat/lng if the entry had them; only the label is edited by hand
+    const location = label
+      ? { ...(entry.location ?? {}), label }
+      : (entry.location?.lat != null ? { ...entry.location, label: null } : null)
+    onSave({ timestamp, location })
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-2">
+      <label className="text-xs flex flex-col gap-1" style={{ color: 'var(--c-text-muted)' }}>
+        📅 Fecha y hora (viajar en el tiempo es legal aquí)
+        <input
+          type="datetime-local"
+          value={when}
+          onChange={e => setWhen(e.target.value)}
+          className="rounded-lg px-2 py-1.5 text-sm outline-none"
+          style={fieldStyle}
+        />
+      </label>
+      <label className="text-xs flex flex-col gap-1" style={{ color: 'var(--c-text-muted)' }}>
+        📍 Lugar (la coartada)
+        <input
+          type="text"
+          value={place}
+          onChange={e => setPlace(e.target.value)}
+          placeholder="p. ej. Heladería del puerto"
+          className="rounded-lg px-2 py-1.5 text-sm outline-none"
+          style={fieldStyle}
+        />
+      </label>
+      <div className="flex gap-2 justify-end">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-xs px-3 py-1.5 rounded-lg active:opacity-70"
+          style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
+        >Cancelar</button>
+        <button
+          type="submit"
+          className="text-xs px-3 py-1.5 rounded-lg font-semibold active:opacity-80"
+          style={{ background: 'var(--c-brand)', color: '#fff' }}
+        >Guardar</button>
+      </div>
+    </form>
+  )
+}
+
 export default function AdminScreen() {
   const { counters, members, entries } = useStore()
   const dispatch = useDispatch()
@@ -125,6 +195,7 @@ export default function AdminScreen() {
   const [showEntries, setShowEntries] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(null)   // { type, id }
   const [deleteEntryConfirm, setDeleteEntryConfirm] = useState(null) // entry id
+  const [editingEntry, setEditingEntry] = useState(null)             // entry id
 
   const baseUrl = window.location.origin + import.meta.env.BASE_URL.replace(/\/$/, '')
 
@@ -390,54 +461,76 @@ export default function AdminScreen() {
                 const memberName = members.find(m => m.id === e.member)?.name ?? e.member
                 const counter = counters.find(c => c.id === e.counter)
                 const isConfirming = deleteEntryConfirm === e.id
+                const isEditing = editingEntry === e.id
                 return (
                   <div
                     key={e.id}
-                    className="rounded-xl px-3 py-2 flex items-center gap-2"
+                    className="rounded-xl px-3 py-2"
                     style={
                       isConfirming
                         ? { background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }
                         : { background: 'var(--c-surface)', border: '1px solid var(--c-border)' }
                     }
                   >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-sm font-medium" style={{ color: 'var(--c-text)' }}>{memberName}</span>
-                        <span className="text-xs" style={{ color: 'var(--c-text-muted)' }}>·</span>
-                        <span className="text-sm" style={{ color: 'var(--c-text)' }}>{counter?.emoji} {counter?.label ?? e.counter}</span>
-                        {e.qty !== 1 && (
-                          <span className="text-xs font-semibold" style={{ color: 'var(--c-brand)' }}>×{e.qty}</span>
-                        )}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-sm font-medium" style={{ color: 'var(--c-text)' }}>{memberName}</span>
+                          <span className="text-xs" style={{ color: 'var(--c-text-muted)' }}>·</span>
+                          <span className="text-sm" style={{ color: 'var(--c-text)' }}>{counter?.emoji} {counter?.label ?? e.counter}</span>
+                          {e.qty !== 1 && (
+                            <span className="text-xs font-semibold" style={{ color: 'var(--c-brand)' }}>×{e.qty}</span>
+                          )}
+                        </div>
+                        <div className="text-xs mt-0.5 flex items-center gap-1.5 flex-wrap" style={{ color: 'var(--c-text-muted)' }}>
+                          <span>{new Date(e.timestamp).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                          {e.location?.label && <span>📍 {e.location.label}</span>}
+                          {e.rating && <span>{'⭐'.repeat(e.rating)}</span>}
+                          {e.note && <span className="italic">"{e.note}"</span>}
+                        </div>
                       </div>
-                      <div className="text-xs mt-0.5 flex items-center gap-1.5 flex-wrap" style={{ color: 'var(--c-text-muted)' }}>
-                        <span>{new Date(e.timestamp).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-                        {e.rating && <span>{'⭐'.repeat(e.rating)}</span>}
-                        {e.note && <span className="italic">"{e.note}"</span>}
-                      </div>
+                      {isConfirming ? (
+                        <div className="flex gap-1.5 flex-shrink-0">
+                          <button
+                            onClick={() => setDeleteEntryConfirm(null)}
+                            className="text-xs px-2 py-1 rounded-lg active:opacity-70"
+                            style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
+                          >Cancelar</button>
+                          <button
+                            onClick={() => {
+                              dispatch({ type: 'REMOVE_ENTRY', id: e.id })
+                              setDeleteEntryConfirm(null)
+                              window.dispatchEvent(new CustomEvent('counter-ops:sync'))
+                            }}
+                            className="text-xs px-2 py-1 rounded-lg font-semibold active:opacity-80"
+                            style={{ background: 'var(--c-danger)', color: '#fff' }}
+                          >Borrar</button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-1 flex-shrink-0 items-center">
+                          <button
+                            onClick={() => { setEditingEntry(isEditing ? null : e.id); setDeleteEntryConfirm(null) }}
+                            className="text-xs px-2 py-1 rounded-lg active:opacity-70"
+                            style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', color: 'var(--c-text-muted)' }}
+                          >✎</button>
+                          <button
+                            onClick={() => { setDeleteEntryConfirm(e.id); setEditingEntry(null) }}
+                            className="flex-shrink-0 px-1 py-1 text-lg leading-none active:opacity-60"
+                            style={{ color: 'var(--c-text-muted)' }}
+                          >✕</button>
+                        </div>
+                      )}
                     </div>
-                    {isConfirming ? (
-                      <div className="flex gap-1.5 flex-shrink-0">
-                        <button
-                          onClick={() => setDeleteEntryConfirm(null)}
-                          className="text-xs px-2 py-1 rounded-lg active:opacity-70"
-                          style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
-                        >Cancelar</button>
-                        <button
-                          onClick={() => {
-                            dispatch({ type: 'REMOVE_ENTRY', id: e.id })
-                            setDeleteEntryConfirm(null)
-                            window.dispatchEvent(new CustomEvent('counter-ops:sync'))
-                          }}
-                          className="text-xs px-2 py-1 rounded-lg font-semibold active:opacity-80"
-                          style={{ background: 'var(--c-danger)', color: '#fff' }}
-                        >Borrar</button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setDeleteEntryConfirm(e.id)}
-                        className="flex-shrink-0 px-1 py-1 text-lg leading-none active:opacity-60"
-                        style={{ color: 'var(--c-text-muted)' }}
-                      >✕</button>
+                    {isEditing && (
+                      <EntryEditForm
+                        entry={e}
+                        onSave={patch => {
+                          dispatch({ type: 'UPDATE_ENTRY', id: e.id, patch })
+                          setEditingEntry(null)
+                          window.dispatchEvent(new CustomEvent('counter-ops:sync'))
+                        }}
+                        onCancel={() => setEditingEntry(null)}
+                      />
                     )}
                   </div>
                 )

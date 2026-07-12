@@ -66,6 +66,14 @@ function reducer(state, action) {
       next = { ...next, undoEntry: null }
       break
 
+    case 'UPDATE_ENTRY':
+      next = updateActive(state, s => ({
+        entries: s.entries.map(e =>
+          e.id === action.id ? { ...e, ...action.patch, updatedAt: new Date().toISOString() } : e
+        ),
+      }))
+      break
+
     case 'REMOVE_ENTRY':
       next = updateActive(state, s => ({
         entries: s.entries.filter(e => e.id !== action.id),
