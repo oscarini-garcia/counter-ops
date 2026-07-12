@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useStore, useDispatch, useNavigate } from '../hooks/useStore.jsx'
 import { useMember } from '../hooks/useMember.js'
 import { useGPS } from '../hooks/useGPS.js'
@@ -17,6 +17,27 @@ export default function LogEntryScreen() {
   const [note,            setNote]            = useState('')
   const [customTime,      setCustomTime]      = useState(false)
   const [when,            setWhen]            = useState('')
+  const whenRef = useRef(null)
+  const navTimer = useRef(null)
+
+  // Don't navigate to a stale destination if the user leaves the screen first
+  useEffect(() => () => clearTimeout(navTimer.current), [])
+
+  function toLocalInputValue(d) {
+    const pad = n => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
+
+  function openTimePicker() {
+    setCustomTime(true)
+    if (!when) setWhen(toLocalInputValue(new Date()))
+    // Open the native picker right away — one tap saved. showPicker needs
+    // recent user activation, which this click provides; fall back to focus.
+    setTimeout(() => {
+      try { whenRef.current?.showPicker?.() } catch { /* focus below is the fallback */ }
+      whenRef.current?.focus()
+    }, 0)
+  }
 
   const { location, status: gpsStatus, recentLocations, selectLocation } = useGPS()
   const [manualLocation, setManualLocation] = useState(null)
@@ -47,6 +68,9 @@ export default function LogEntryScreen() {
     window.dispatchEvent(new CustomEvent('counter-ops:sync'))
     setQty(1); setRating(null); setNote(''); setManualLocation(null)
     setCustomTime(false); setWhen('')
+    // 3 seconds to regret it, then back home
+    clearTimeout(navTimer.current)
+    navTimer.current = setTimeout(() => navigate('home'), 3000)
   }
 
   const chipActive   = { background: 'var(--c-brand)',    color: '#fff',              border: '1.5px solid var(--c-brand)' }
@@ -126,7 +150,7 @@ export default function LogEntryScreen() {
           </button>
           <button
             type="button"
-            onClick={() => setCustomTime(true)}
+            onClick={openTimePicker}
             style={chip(customTime)}
           >
             🕰️ Otro momento
@@ -134,6 +158,7 @@ export default function LogEntryScreen() {
         </div>
         {customTime && (
           <input
+            ref={whenRef}
             type="datetime-local"
             value={when}
             onChange={e => setWhen(e.target.value)}
@@ -233,7 +258,7 @@ export default function LogEntryScreen() {
         Que conste en acta ✓
       </button>
 
-      <UndoToast />
+      <UndoToast onUndo={() => clearTimeout(navTimer.current)} />
     </form>
   )
 }

@@ -56,7 +56,7 @@ function reducer(state, action) {
       next = updateActive(state, s => ({
         entries: [...s.entries, entry],
       }))
-      next = { ...next, undoEntry: { entry, expiresAt: Date.now() + 10000 } }
+      next = { ...next, undoEntry: { entry, expiresAt: Date.now() + 3000 } }
       break
     }
     case 'UNDO_ENTRY':
