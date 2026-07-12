@@ -3,6 +3,7 @@ import { useStore } from '../hooks/useStore.jsx'
 import { useMember } from '../hooks/useMember.js'
 import MemberAvatar from '../components/MemberAvatar.jsx'
 import { generateAwards } from '../lib/awards.js'
+import { rankQuip, RANK_MEDALS } from '../lib/gamification.js'
 
 const LeafletMap    = lazy(() => import('../components/LeafletMap.jsx'))
 const TimelineChart = lazy(() => import('../components/TimelineChart.jsx'))
@@ -41,7 +42,7 @@ export default function ReportScreen() {
   })).sort((a, b) => b.total - a.total)
 
   const funStat = counterTotals[0]
-    ? `The family had ${counterTotals[0].total} ${counterTotals[0].counter.label}${counterTotals[0].total !== 1 ? 's' : ''}. No regrets.`
+    ? `La familia se ha metido entre pecho y espalda ${counterTotals[0].total} × ${counterTotals[0].counter.label}. Cero arrepentimiento.`
     : null
 
   const awards = generateAwards(entries, members)
@@ -56,7 +57,7 @@ export default function ReportScreen() {
 
       {/* Header row */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-black" style={{ color: 'var(--c-text)' }}>Trip Report</h1>
+        <h1 className="text-xl font-black" style={{ color: 'var(--c-text)' }}>Informe del viaje</h1>
         {memberId && (
           <button
             onClick={() => setPersonalOnly(p => !p)}
@@ -66,7 +67,7 @@ export default function ReportScreen() {
               : { background: 'var(--c-surface-2)', color: 'var(--c-text-muted)', border: '1px solid var(--c-border)' }
             }
           >
-            {personalOnly ? 'My stats' : 'Everyone'}
+            {personalOnly ? 'Lo mío' : 'Todo el clan'}
           </button>
         )}
       </div>
@@ -74,14 +75,14 @@ export default function ReportScreen() {
       {/* Leaderboard */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <div style={sectionLabel}>Leaderboard</div>
+          <div style={sectionLabel}>Clasificación (aquí no se juzga a nadie*)</div>
           <select
             value={leaderboardCounter}
             onChange={e => setLeaderboardCounter(e.target.value)}
             className="text-xs rounded-lg px-2 py-1 outline-none"
             style={{ background: 'var(--c-surface)', color: 'var(--c-text)', border: '1px solid var(--c-border)' }}
           >
-            <option value="">All counters</option>
+            <option value="">Todos los contadores</option>
             {counters.map(c => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
           </select>
         </div>
@@ -95,20 +96,29 @@ export default function ReportScreen() {
                 border: i === 0 ? '1.5px solid rgba(232,97,58,0.25)' : '1px solid var(--c-border)',
               }}
             >
-              <span className="font-bold text-sm w-5 text-center" style={{ color: 'var(--c-text-muted)' }}>{i + 1}</span>
+              <span className="font-bold text-sm w-6 text-center" style={{ color: 'var(--c-text-muted)' }}>{i + 1}</span>
               <MemberAvatar member={member} memberId={member.id} size="sm" showBadges={false} />
-              <span className="flex-1 font-semibold" style={{ color: 'var(--c-text)' }}>{member.name}</span>
-              {i === 0 && <span>👑</span>}
+              <div className="flex-1 min-w-0">
+                <span className="font-semibold block" style={{ color: 'var(--c-text)' }}>
+                  {member.name}{total > 0 && RANK_MEDALS[i] ? ` ${RANK_MEDALS[i]}` : ''}
+                </span>
+                <span className="text-[11px] italic block truncate" style={{ color: 'var(--c-text-muted)' }}>
+                  {rankQuip(i, totalsPerMember.length, total)}
+                </span>
+              </div>
               <span className="text-xl font-black" style={{ color: i === 0 ? 'var(--c-brand)' : 'var(--c-text)' }}>{total}</span>
             </div>
           ))}
+        </div>
+        <div className="text-[10px] mt-1.5 italic" style={{ color: 'var(--c-text-muted)' }}>
+          * Se juzga muchísimo.
         </div>
       </div>
 
       {/* Timeline */}
       {entries.length > 0 && (
         <div>
-          <div style={sectionLabel}>Timeline</div>
+          <div style={sectionLabel}>Cronología del desenfreno</div>
           <Suspense fallback={<div className="h-40 rounded-xl animate-pulse" style={{ background: 'var(--c-surface)' }} />}>
             <TimelineChart entries={viewEntries} filterMember={personalOnly ? memberId : ''} />
           </Suspense>
@@ -118,7 +128,7 @@ export default function ReportScreen() {
       {/* Map */}
       {entries.some(e => e.location?.lat) && (
         <div>
-          <div style={sectionLabel}>Map</div>
+          <div style={sectionLabel}>Mapa del crimen</div>
           <Suspense fallback={<div className="h-72 rounded-xl animate-pulse" style={{ background: 'var(--c-surface)' }} />}>
             <LeafletMap entries={viewEntries} counters={counters} />
           </Suspense>
@@ -134,7 +144,7 @@ export default function ReportScreen() {
             border: '1.5px solid rgba(232,97,58,0.2)',
           }}
         >
-          <div className="text-sm font-bold mb-1" style={{ color: 'var(--c-text-muted)' }}>📸 Trip Summary</div>
+          <div className="text-sm font-bold mb-1" style={{ color: 'var(--c-text-muted)' }}>📸 Resumen del viaje</div>
           <div className="text-lg font-black" style={{ color: 'var(--c-text)' }}>{session}</div>
           <div className="text-xs mb-3" style={{ color: 'var(--c-text-muted)' }}>{startDate} – {endDate}</div>
           <div className="flex flex-col gap-1.5 mb-3">
@@ -146,7 +156,7 @@ export default function ReportScreen() {
               </div>
             ))}
           </div>
-          {topLocation && <div className="text-xs" style={{ color: 'var(--c-text-muted)' }}>📍 Favourite spot: {topLocation}</div>}
+          {topLocation && <div className="text-xs" style={{ color: 'var(--c-text-muted)' }}>📍 Lugar del delito favorito: {topLocation}</div>}
           {funStat && <div className="text-xs mt-1 italic" style={{ color: 'var(--c-brand)' }}>{funStat}</div>}
         </div>
       )}
@@ -154,7 +164,7 @@ export default function ReportScreen() {
       {/* Awards */}
       {awards.length > 0 && (
         <div>
-          <div style={sectionLabel}>🏅 Awards</div>
+          <div style={sectionLabel}>🏅 Premios que nadie pidió</div>
           <div className="flex flex-col gap-2">
             {awards.map((a, i) => (
               <div
@@ -176,7 +186,7 @@ export default function ReportScreen() {
       {/* Moments */}
       {entries.filter(e => e.note).length > 0 && (
         <div>
-          <div style={sectionLabel}>💬 Moments</div>
+          <div style={sectionLabel}>💬 Momentazos</div>
           <div className="flex flex-col gap-2">
             {entries.filter(e => e.note).slice(-10).reverse().map(e => {
               const counter = counters.find(c => c.id === e.counter)

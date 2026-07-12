@@ -72,14 +72,14 @@ export default function SessionSwitcher() {
 
         <div className="px-5 pt-2 pb-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold" style={{ color: 'var(--c-text)' }}>Sessions</h2>
+            <h2 className="text-base font-bold" style={{ color: 'var(--c-text)' }}>Sesiones</h2>
             {adminUnlocked && (
               <button
                 onClick={() => setCreating(c => !c)}
                 className="text-sm font-semibold active:opacity-70"
                 style={{ color: 'var(--c-brand)' }}
               >
-                + New
+                + Nueva
               </button>
             )}
           </div>
@@ -91,7 +91,7 @@ export default function SessionSwitcher() {
                 type="text"
                 value={newName}
                 onChange={e => setNewName(e.target.value)}
-                placeholder="Session name (e.g. Menorca 2027)"
+                placeholder="Nombre de la sesión (p. ej. Menorca 2027)"
                 className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none"
                 style={{
                   background: 'var(--c-surface-2)',
@@ -105,7 +105,7 @@ export default function SessionSwitcher() {
                 className="px-4 rounded-xl text-sm font-semibold active:opacity-80"
                 style={{ background: 'var(--c-brand)', color: '#fff' }}
               >
-                Create
+                Crear
               </button>
             </form>
           )}
@@ -140,7 +140,7 @@ export default function SessionSwitcher() {
                       type="submit"
                       className="text-xs font-semibold px-2"
                       style={{ color: 'var(--c-brand)' }}
-                    >Save</button>
+                    >Guardar</button>
                     <button
                       type="button"
                       onClick={() => setRenamingId(null)}
@@ -161,7 +161,7 @@ export default function SessionSwitcher() {
                         <span className="text-sm font-medium" style={{ color: 'var(--c-text)' }}>{s.name}</span>
                       </div>
                       <div className="text-xs mt-0.5" style={{ color: 'var(--c-text-muted)' }}>
-                        {s.entries?.length ?? 0} entries · {new Date(s.createdAt).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {s.entries?.length ?? 0} {(s.entries?.length ?? 0) === 1 ? 'entrada' : 'entradas'} · {new Date(s.createdAt).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}
                       </div>
                     </button>
                     {adminUnlocked && (
@@ -171,7 +171,7 @@ export default function SessionSwitcher() {
                           className="text-xs px-2 py-1 rounded-lg active:opacity-70"
                           style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text-muted)' }}
                         >
-                          Rename
+                          Renombrar
                         </button>
                         {sessions.length > 1 && (
                           <button
@@ -183,7 +183,7 @@ export default function SessionSwitcher() {
                                 : { background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text-muted)' }
                             }
                           >
-                            {deleteConfirm === s.id ? 'Sure?' : '✕'}
+                            {deleteConfirm === s.id ? '¿Seguro?' : '✕'}
                           </button>
                         )}
                       </>

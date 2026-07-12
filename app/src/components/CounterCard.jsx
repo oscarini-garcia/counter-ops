@@ -52,7 +52,7 @@ export default function CounterCard({ counter, onQuickAdd }) {
       </span>
       {myTotal > 0 && (
         <span className="text-xs" style={{ color: 'var(--c-text-muted)' }}>
-          Mine: {myTotal}
+          Míos: {myTotal} 😇
         </span>
       )}
     </button>

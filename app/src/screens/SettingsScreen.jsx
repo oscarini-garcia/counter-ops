@@ -43,7 +43,7 @@ export default function SettingsScreen() {
 
   return (
     <div className="px-4 py-5 flex flex-col gap-6 max-w-lg mx-auto pb-8" style={{ background: 'var(--c-bg)' }}>
-      <h1 className="text-xl font-black" style={{ color: 'var(--c-text)' }}>Settings</h1>
+      <h1 className="text-xl font-black" style={{ color: 'var(--c-text)' }}>Ajustes</h1>
 
       {/* Admin access */}
       <div>
@@ -54,7 +54,7 @@ export default function SettingsScreen() {
             className="w-full font-semibold py-3 rounded-xl text-sm active:opacity-80 transition-opacity"
             style={{ background: 'var(--c-brand)', color: '#fff' }}
           >
-            ⚙️ Open Admin Panel
+            ⚙️ Abrir panel de mando
           </button>
         ) : (
           <form onSubmit={tryUnlockAdmin} className="flex gap-2">
@@ -62,7 +62,7 @@ export default function SettingsScreen() {
               type="password"
               value={adminKey}
               onChange={e => setAdminKey(e.target.value)}
-              placeholder="Admin key"
+              placeholder="Clave de admin (la palabra mágica)"
               className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none"
               style={{
                 background: 'var(--c-surface)',
@@ -75,7 +75,7 @@ export default function SettingsScreen() {
               className="px-4 py-2 rounded-xl text-sm font-bold active:opacity-80"
               style={{ background: 'var(--c-brand)', color: '#fff' }}
             >
-              {adminError ? '✗' : 'Unlock'}
+              {adminError ? '✗' : 'Abrir'}
             </button>
           </form>
         )}
@@ -83,19 +83,19 @@ export default function SettingsScreen() {
 
       {/* Force refresh */}
       <div>
-        <label className={sectionLabel} style={{ color: 'var(--c-text-muted)' }}>App update</label>
+        <label className={sectionLabel} style={{ color: 'var(--c-text-muted)' }}>Actualización de la app</label>
         <button
           onClick={forceRefresh}
           className="w-full font-medium py-3 rounded-xl text-sm active:opacity-80 transition-opacity"
           style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
         >
-          ↻ Force refresh (clears service worker)
+          ↻ Forzar recarga (el clásico "apagar y encender")
         </button>
       </div>
 
       {/* Sync log */}
       <div>
-        <label className={sectionLabel} style={{ color: 'var(--c-text-muted)' }}>Sync log (last 10)</label>
+        <label className={sectionLabel} style={{ color: 'var(--c-text-muted)' }}>Registro de sincronización (últimos 10)</label>
         <div className="rounded-xl overflow-hidden" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
           {syncLog?.length ? syncLog.map((entry, i) => (
             <div key={i} className="px-3 py-2" style={{ borderBottom: i < syncLog.length - 1 ? '1px solid var(--c-border)' : 'none' }}>
@@ -117,28 +117,28 @@ export default function SettingsScreen() {
               )}
             </div>
           )) : (
-            <div className="px-3 py-3 text-xs" style={{ color: 'var(--c-text-muted)' }}>No sync attempts yet.</div>
+            <div className="px-3 py-3 text-xs" style={{ color: 'var(--c-text-muted)' }}>Aún no hay intentos de sincronización. Qué tranquilidad.</div>
           )}
         </div>
       </div>
 
       {/* Danger zone */}
       <div>
-        <label className={sectionLabel} style={{ color: 'var(--c-text-muted)' }}>Danger zone</label>
+        <label className={sectionLabel} style={{ color: 'var(--c-text-muted)' }}>Zona de peligro</label>
         {!showResetConfirm ? (
           <button
             onClick={() => setShowResetConfirm(true)}
             className="w-full font-medium py-3 rounded-xl text-sm active:opacity-80"
             style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--c-danger)', border: '1px solid rgba(239,68,68,0.2)' }}
           >
-            🗑️ Reset local data
+            🗑️ Borrar datos locales
           </button>
         ) : (
           <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
-            <p className="text-sm" style={{ color: 'var(--c-danger)' }}>This wipes all local data. Are you sure?</p>
+            <p className="text-sm" style={{ color: 'var(--c-danger)' }}>Esto borra todos los datos locales. ¿Seguro? Los helados no se olvidan tan fácil.</p>
             <div className="flex gap-2">
-              <button onClick={() => setShowResetConfirm(false)} className="flex-1 py-2.5 rounded-xl text-sm font-medium" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}>Cancel</button>
-              <button onClick={resetLocal} className="flex-1 py-2.5 rounded-xl text-sm font-bold" style={{ background: 'var(--c-danger)', color: '#fff' }}>Reset</button>
+              <button onClick={() => setShowResetConfirm(false)} className="flex-1 py-2.5 rounded-xl text-sm font-medium" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}>Cancelar</button>
+              <button onClick={resetLocal} className="flex-1 py-2.5 rounded-xl text-sm font-bold" style={{ background: 'var(--c-danger)', color: '#fff' }}>Borrar</button>
             </div>
           </div>
         )}

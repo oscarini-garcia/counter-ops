@@ -42,11 +42,22 @@ function IcoChart({ color }) {
   )
 }
 
+function IcoStats({ color }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <circle cx="9" cy="7" r="3.5" stroke={color} strokeWidth="2"/>
+      <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+      <path d="M17 11v-3M20 11V5" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
 const NAV = [
-  { screen: 'home',    label: 'Home',    Icon: IcoHome  },
-  { screen: 'log',     label: 'Log',     Icon: IcoPlus  },
-  { screen: 'entries', label: 'Entries', Icon: IcoList  },
-  { screen: 'report',  label: 'Report',  Icon: IcoChart },
+  { screen: 'home',    label: 'Inicio',   Icon: IcoHome  },
+  { screen: 'log',     label: 'Apuntar',  Icon: IcoPlus  },
+  { screen: 'entries', label: 'Registro', Icon: IcoList  },
+  { screen: 'stats',   label: 'Stats',    Icon: IcoStats },
+  { screen: 'report',  label: 'Informe',  Icon: IcoChart },
 ]
 
 export default function AppShell({ children }) {
@@ -101,7 +112,7 @@ export default function AppShell({ children }) {
             style={{
               color: activeScreen === 'settings' ? 'var(--c-brand)' : 'var(--c-text-muted)',
             }}
-            aria-label="Settings"
+            aria-label="Ajustes"
           >
             {/* Settings gear icon */}
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -172,7 +183,7 @@ function OfflineBanner() {
   if (!offline) return null
   return (
     <div className="text-xs text-center py-1 px-4 flex-shrink-0" style={{ background: '#fef3c7', color: '#92400e' }}>
-      ⚠️ Offline — entries will sync when you reconnect
+      ⚠️ Sin conexión — tus méritos se sincronizarán cuando vuelvas a la civilización
     </div>
   )
 }

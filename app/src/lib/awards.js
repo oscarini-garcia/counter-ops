@@ -16,7 +16,7 @@ export function generateAwards(entries, members) {
     if (consistent.length > 0) {
       const winnerId = consistent[0][0]
       const winner = members.find(m => m.id === winnerId)
-      awards.push({ emoji: '🥇', title: 'Most Consistent', winner: winner?.name ?? winnerId, detail: `Logged every day of the trip` })
+      awards.push({ emoji: '🥇', title: 'Constancia de hierro', winner: winner?.name ?? winnerId, detail: `Ni un solo día sin apuntar. Eso es compromiso (con algo).` })
     }
   }
 
@@ -32,7 +32,7 @@ export function generateAwards(entries, members) {
     const [key, total] = bigDay
     const winnerId = key.split('__')[0]
     const winner = members.find(m => m.id === winnerId)
-    awards.push({ emoji: '💥', title: 'Biggest Single Day', winner: winner?.name ?? winnerId, detail: `${total} in one day` })
+    awards.push({ emoji: '💥', title: 'Récord en un solo día', winner: winner?.name ?? winnerId, detail: `${total} en un día. Sin preguntas, por favor.` })
   }
 
   // 🕵️ Suspiciously Precise Notes
@@ -41,7 +41,7 @@ export function generateAwards(entries, members) {
   const topNotes = Object.entries(noteCount).sort((a, b) => b[1] - a[1])[0]
   if (topNotes && topNotes[1] >= 2) {
     const winner = members.find(m => m.id === topNotes[0])
-    awards.push({ emoji: '🕵️', title: 'Suspiciously Precise Notes', winner: winner?.name ?? topNotes[0], detail: `${topNotes[1]} notes logged` })
+    awards.push({ emoji: '🕵️', title: 'Notas sospechosamente precisas', winner: winner?.name ?? topNotes[0], detail: `${topNotes[1]} notas escritas. ¿Novela en camino?` })
   }
 
   // 🐢 The Reluctant One — least consumed
@@ -52,7 +52,7 @@ export function generateAwards(entries, members) {
   if (active.length >= 2) {
     const min = active.sort((a, b) => a[1] - b[1])[0]
     const winner = members.find(m => m.id === min[0])
-    awards.push({ emoji: '🐢', title: 'The Reluctant One', winner: winner?.name ?? min[0], detail: `Only ${min[1]} logged` })
+    awards.push({ emoji: '🐢', title: 'Fuerza de voluntad sobrehumana', winner: winner?.name ?? min[0], detail: `Solo ${min[1]}. ¿Todo bien en casa?` })
   }
 
   // 🌍 The Explorer — most distinct locations
@@ -64,7 +64,7 @@ export function generateAwards(entries, members) {
   const explorer = Object.entries(locCount).sort((a, b) => b[1].size - a[1].size)[0]
   if (explorer && explorer[1].size >= 2) {
     const winner = members.find(m => m.id === explorer[0])
-    awards.push({ emoji: '🌍', title: 'The Explorer', winner: winner?.name ?? explorer[0], detail: `${explorer[1].size} distinct locations` })
+    awards.push({ emoji: '🌍', title: 'Espíritu explorador', winner: winner?.name ?? explorer[0], detail: `${explorer[1].size} sitios distintos. Ni Marco Polo, oye.` })
   }
 
   return awards

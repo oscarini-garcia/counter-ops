@@ -14,7 +14,7 @@ export default function TimelineChart({ entries, filterMember }) {
   const data = Object.entries(byDay).map(([day, total]) => ({ day, total }))
   const max = Math.max(...data.map(d => d.total), 1)
 
-  if (data.length === 0) return <div className="text-center text-slate-500 py-6 text-sm">No data</div>
+  if (data.length === 0) return <div className="text-center text-slate-500 py-6 text-sm">Sin datos. ¿Seguro que estáis de vacaciones?</div>
 
   return (
     <ResponsiveContainer width="100%" height={160}>

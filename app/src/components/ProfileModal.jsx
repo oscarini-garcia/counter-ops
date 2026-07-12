@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom'
 import { useStore, useDispatch } from '../hooks/useStore.jsx'
-import { useMember } from '../hooks/useMember.js'
+import { useMember, switchMember } from '../hooks/useMember.js'
 import { compressAvatar } from '../lib/imageCompress.js'
 
 export default function ProfileModal() {
@@ -55,6 +55,14 @@ export default function ProfileModal() {
     dispatch({ type: 'SET_PROFILE_MODAL', open: false })
   }
 
+  function handleSwitch(id) {
+    if (!id || id === memberId) return
+    switchMember(dispatch, id)
+    const m = members.find(x => x.id === id)
+    setName(m?.name ?? id)
+    setAvatarPreview(m?.avatar ?? null)
+  }
+
   if (!profileModalOpen) return null
 
   const initials = (name || memberId || '?').slice(0, 2).toUpperCase()
@@ -70,7 +78,7 @@ export default function ProfileModal() {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold" style={{ color: 'var(--c-text)' }}>Your Profile</h2>
+          <h2 className="text-lg font-bold" style={{ color: 'var(--c-text)' }}>Tu perfil</h2>
           <button
             onClick={close}
             className="text-xl w-8 h-8 flex items-center justify-center"
@@ -96,7 +104,7 @@ export default function ProfileModal() {
             className="text-sm active:opacity-70"
             style={{ color: 'var(--c-brand)' }}
           >
-            {compressing ? '⏳ Compressing…' : '📷 Change photo'}
+            {compressing ? '⏳ Comprimiendo…' : '📷 Cambiar foto'}
           </button>
           <input
             ref={fileRef}
@@ -113,7 +121,7 @@ export default function ProfileModal() {
           <label
             className="text-xs font-semibold uppercase tracking-wider block mb-1.5"
             style={{ color: 'var(--c-text-muted)' }}
-          >Display name</label>
+          >Nombre visible</label>
           <input
             type="text"
             value={name}
@@ -127,13 +135,33 @@ export default function ProfileModal() {
           />
         </div>
 
+        {/* Switch user */}
+        {members.length > 1 && (
+          <div
+            className="mb-5 rounded-xl px-3 py-2.5 flex items-center justify-between gap-2"
+            style={{ background: 'var(--c-surface-2)' }}
+          >
+            <span className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
+              🔄 ¿No eres {member?.name ?? memberId}?
+            </span>
+            <select
+              value={memberId}
+              onChange={e => handleSwitch(e.target.value)}
+              className="text-xs font-bold rounded-lg px-2 py-1.5 outline-none"
+              style={{ background: 'var(--c-surface)', color: 'var(--c-text)', border: '1px solid var(--c-border)' }}
+            >
+              {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
+          </div>
+        )}
+
         <button
           onClick={handleSave}
           disabled={compressing}
           className="w-full font-semibold py-3.5 rounded-2xl text-base disabled:opacity-40 active:opacity-80"
           style={{ background: 'var(--c-brand)', color: '#fff' }}
         >
-          Save
+          Guardar
         </button>
       </div>
     </div>,

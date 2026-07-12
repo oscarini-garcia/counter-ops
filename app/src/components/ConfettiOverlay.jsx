@@ -41,8 +41,8 @@ export default function ConfettiOverlay() {
     <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
       <div className="bg-slate-800/90 rounded-3xl px-6 py-5 text-center shadow-2xl mx-6">
         <div className="text-5xl mb-2">🎉</div>
-        <div className="text-xl font-bold text-slate-100">{threshold} {counter?.label ?? ''} {counter?.emoji ?? ''}!</div>
-        <div className="text-sm text-slate-400 mt-1">Family milestone reached</div>
+        <div className="text-xl font-bold text-slate-100">¡{threshold} {counter?.label ?? ''} {counter?.emoji ?? ''}!</div>
+        <div className="text-sm text-slate-400 mt-1">Hito familiar desbloqueado. El médico no tiene por qué saberlo.</div>
       </div>
     </div>
   )
