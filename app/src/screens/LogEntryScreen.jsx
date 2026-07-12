@@ -15,6 +15,8 @@ export default function LogEntryScreen() {
   const [qty,             setQty]             = useState(1)
   const [rating,          setRating]          = useState(null)
   const [note,            setNote]            = useState('')
+  const [customTime,      setCustomTime]      = useState(false)
+  const [when,            setWhen]            = useState('')
 
   const { location, status: gpsStatus, recentLocations, selectLocation } = useGPS()
   const [manualLocation, setManualLocation] = useState(null)
@@ -31,6 +33,7 @@ export default function LogEntryScreen() {
   function handleSubmit(e) {
     e.preventDefault()
     if (!selectedMember || !selectedCounter) return
+    const parsed = customTime && when ? new Date(when) : null
     dispatch({
       type: 'ADD_ENTRY',
       memberId: selectedMember,
@@ -39,9 +42,11 @@ export default function LogEntryScreen() {
       rating,
       location: resolvedLocation,
       note,
+      timestamp: parsed && !isNaN(parsed) ? parsed.toISOString() : undefined,
     })
     window.dispatchEvent(new CustomEvent('counter-ops:sync'))
     setQty(1); setRating(null); setNote(''); setManualLocation(null)
+    setCustomTime(false); setWhen('')
   }
 
   const chipActive   = { background: 'var(--c-brand)',    color: '#fff',              border: '1.5px solid var(--c-brand)' }
@@ -106,6 +111,42 @@ export default function LogEntryScreen() {
             +
           </button>
         </div>
+      </div>
+
+      {/* When */}
+      <div>
+        <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--c-text-muted)' }}>¿Cuándo? (confesar con retraso es legal)</label>
+        <div className="flex flex-wrap gap-2 items-center">
+          <button
+            type="button"
+            onClick={() => { setCustomTime(false); setWhen('') }}
+            style={chip(!customTime)}
+          >
+            Ahora mismo
+          </button>
+          <button
+            type="button"
+            onClick={() => setCustomTime(true)}
+            style={chip(customTime)}
+          >
+            🕰️ Otro momento
+          </button>
+        </div>
+        {customTime && (
+          <input
+            type="datetime-local"
+            value={when}
+            onChange={e => setWhen(e.target.value)}
+            className="w-full mt-2 rounded-xl px-3 py-2.5 text-sm outline-none"
+            style={{
+              background: 'var(--c-surface)',
+              border: '1.5px solid var(--c-border)',
+              color: 'var(--c-text)',
+              minWidth: 0,
+              maxWidth: '100%',
+            }}
+          />
+        )}
       </div>
 
       {/* Where */}

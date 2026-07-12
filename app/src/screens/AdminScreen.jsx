@@ -128,6 +128,8 @@ function EntryEditForm({ entry, onSave, onCancel }) {
     background: 'var(--c-surface-2)',
     border: '1px solid var(--c-border)',
     color: 'var(--c-text)',
+    minWidth: 0,
+    maxWidth: '100%',
   }
 
   function handleSubmit(e) {
@@ -150,7 +152,7 @@ function EntryEditForm({ entry, onSave, onCancel }) {
           type="datetime-local"
           value={when}
           onChange={e => setWhen(e.target.value)}
-          className="rounded-lg px-2 py-1.5 text-sm outline-none"
+          className="rounded-lg px-2 py-1.5 text-sm outline-none w-full"
           style={fieldStyle}
         />
       </label>
@@ -161,7 +163,7 @@ function EntryEditForm({ entry, onSave, onCancel }) {
           value={place}
           onChange={e => setPlace(e.target.value)}
           placeholder="p. ej. Heladería del puerto"
-          className="rounded-lg px-2 py-1.5 text-sm outline-none"
+          className="rounded-lg px-2 py-1.5 text-sm outline-none w-full"
           style={fieldStyle}
         />
       </label>
@@ -199,6 +201,7 @@ export default function AdminScreen() {
   const [bulkMode, setBulkMode] = useState(false)
   const [bulkSelected, setBulkSelected] = useState([])               // entry ids
   const [bulkDate, setBulkDate] = useState('')
+  const [bulkTime, setBulkTime] = useState('')
   const [bulkPlace, setBulkPlace] = useState('')
 
   const baseUrl = window.location.origin + import.meta.env.BASE_URL.replace(/\/$/, '')
@@ -239,21 +242,29 @@ export default function AdminScreen() {
     setBulkMode(false)
     setBulkSelected([])
     setBulkDate('')
+    setBulkTime('')
     setBulkPlace('')
   }
 
   function applyBulk() {
     const place = bulkPlace.trim()
-    if (!bulkDate && !place) return
+    if (!bulkDate && !bulkTime && !place) return
     for (const id of bulkSelected) {
       const entry = entries.find(en => en.id === id)
       if (!entry) continue
       const patch = {}
-      if (bulkDate) {
-        // New date, same time of day — the usual fix is "wrong day, right hour"
-        const [y, mo, d] = bulkDate.split('-').map(Number)
+      if (bulkDate || bulkTime) {
+        // Date and time apply independently: an empty field keeps the
+        // entry's original value for that part
         const nd = new Date(entry.timestamp)
-        nd.setFullYear(y, mo - 1, d)
+        if (bulkDate) {
+          const [y, mo, d] = bulkDate.split('-').map(Number)
+          nd.setFullYear(y, mo - 1, d)
+        }
+        if (bulkTime) {
+          const [hh, mm] = bulkTime.split(':').map(Number)
+          nd.setHours(hh, mm)
+        }
         patch.timestamp = nd.toISOString()
       }
       if (place) patch.location = { ...(entry.location ?? {}), label: place }
@@ -274,7 +285,7 @@ export default function AdminScreen() {
   }
 
   return (
-    <div className="px-4 py-4 flex flex-col gap-6 max-w-lg mx-auto pb-8" style={{ background: 'var(--c-bg)' }}>
+    <div className="px-4 py-4 flex flex-col gap-6 max-w-lg mx-auto pb-8 overflow-x-hidden" style={{ background: 'var(--c-bg)' }}>
       <h1 className="text-lg font-bold" style={{ color: 'var(--c-text)' }}>⚙️ Panel de mando</h1>
 
       {/* ── COUNTERS ── */}
@@ -399,8 +410,8 @@ export default function AdminScreen() {
                         className="flex items-center gap-2 pt-1"
                         style={{ borderTop: '1px solid var(--c-border)' }}
                       >
-                        <span className="text-xs flex-1" style={{ color: 'var(--c-warning)' }}>
-                          El ID del enlace es <span className="font-mono">{m.id}</span> — ¿corregir a <span className="font-mono">{expectedId}</span>?
+                        <span className="text-xs flex-1 min-w-0 break-words" style={{ color: 'var(--c-warning)' }}>
+                          El ID del enlace es <span className="font-mono break-all">{m.id}</span> — ¿corregir a <span className="font-mono break-all">{expectedId}</span>?
                         </span>
                         <button
                           type="button"
@@ -448,7 +459,7 @@ export default function AdminScreen() {
                     <div>
                       <span className="text-sm font-medium" style={{ color: 'var(--c-text)' }}>{m.name}</span>
                       <span
-                        className="text-xs ml-2 font-mono"
+                        className="text-xs ml-2 font-mono break-all"
                         style={{ color: idMismatch ? 'var(--c-warning)' : 'var(--c-text-muted)' }}
                       >{m.id}</span>
                       {idMismatch && <span className="text-xs ml-1">⚠️</span>}
@@ -492,7 +503,7 @@ export default function AdminScreen() {
             <span style={{ color: 'var(--c-text-muted)' }}>{showEntries ? '▲' : '▼'}</span>
           </button>
           {showEntries && (
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
               {!bulkMode ? (
                 <button
                   onClick={() => setBulkMode(true)}
@@ -626,16 +637,31 @@ export default function AdminScreen() {
               className="rounded-xl p-3 mt-2 flex flex-col gap-2.5"
               style={{ background: 'var(--c-surface)', border: '1.5px solid rgba(232,97,58,0.35)' }}
             >
-              <label className="text-xs flex flex-col gap-1" style={{ color: 'var(--c-text-muted)' }}>
-                📅 Nueva fecha (cada entrada conserva su hora)
-                <input
-                  type="date"
-                  value={bulkDate}
-                  onChange={e => setBulkDate(e.target.value)}
-                  className="rounded-lg px-2 py-1.5 text-sm outline-none"
-                  style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
-                />
-              </label>
+              <div className="flex gap-2">
+                <label className="text-xs flex flex-col gap-1 flex-1 min-w-0" style={{ color: 'var(--c-text-muted)' }}>
+                  📅 Nueva fecha
+                  <input
+                    type="date"
+                    value={bulkDate}
+                    onChange={e => setBulkDate(e.target.value)}
+                    className="rounded-lg px-2 py-1.5 text-sm outline-none w-full"
+                    style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', color: 'var(--c-text)', minWidth: 0 }}
+                  />
+                </label>
+                <label className="text-xs flex flex-col gap-1 w-28" style={{ color: 'var(--c-text-muted)' }}>
+                  🕐 Nueva hora
+                  <input
+                    type="time"
+                    value={bulkTime}
+                    onChange={e => setBulkTime(e.target.value)}
+                    className="rounded-lg px-2 py-1.5 text-sm outline-none w-full"
+                    style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', color: 'var(--c-text)', minWidth: 0 }}
+                  />
+                </label>
+              </div>
+              <p className="text-[10px] -mt-1" style={{ color: 'var(--c-text-muted)' }}>
+                Deja un campo vacío para conservar el valor original de cada entrada.
+              </p>
               <label className="text-xs flex flex-col gap-1" style={{ color: 'var(--c-text-muted)' }}>
                 📍 Nuevo lugar (opcional — deja vacío para no tocarlo)
                 <input
@@ -649,7 +675,7 @@ export default function AdminScreen() {
               </label>
               <button
                 onClick={applyBulk}
-                disabled={!bulkDate && !bulkPlace.trim()}
+                disabled={!bulkDate && !bulkTime && !bulkPlace.trim()}
                 className="w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-40 active:opacity-80"
                 style={{ background: 'var(--c-brand)', color: '#fff' }}
               >
