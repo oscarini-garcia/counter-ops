@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useStore, useDispatch, useNavigate } from '../hooks/useStore.jsx'
 import { useMember } from '../hooks/useMember.js'
 import { useGPS } from '../hooks/useGPS.js'
+import { geocodePlace } from '../lib/geo.js'
 import UndoToast from '../components/UndoToast.jsx'
 
 export default function LogEntryScreen() {
@@ -41,9 +42,9 @@ export default function LogEntryScreen() {
 
   const { location, status: gpsStatus, recentLocations, selectLocation } = useGPS()
   const [manualLocation, setManualLocation] = useState(null)
+  const [placeTyped,     setPlaceTyped]     = useState('')
 
   const resolvedLocation = manualLocation ?? (gpsStatus === 'resolved' ? location : null)
-  const showFallback     = gpsStatus === 'timeout' || gpsStatus === 'denied'
 
   useEffect(() => {
     const p   = new URLSearchParams(window.location.search)
@@ -55,22 +56,30 @@ export default function LogEntryScreen() {
     setSelectedMembers(sel => sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id])
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     if (selectedMembers.length === 0 || !selectedCounter) return
     const parsed = customTime && when ? new Date(when) : null
+    // A typed place wins over chips and GPS; look up its coordinates so it
+    // shows on the map (label still saved if the lookup finds nothing)
+    let entryLocation = resolvedLocation
+    const typed = placeTyped.trim()
+    if (typed) {
+      const coords = await geocodePlace(typed)
+      entryLocation = { label: typed, ...(coords ?? {}) }
+    }
     dispatch({
       type: 'ADD_ENTRY',
       memberIds: selectedMembers,
       counterId: selectedCounter,
       qty,
       rating,
-      location: resolvedLocation,
+      location: entryLocation,
       note,
       timestamp: parsed && !isNaN(parsed) ? parsed.toISOString() : undefined,
     })
     window.dispatchEvent(new CustomEvent('counter-ops:sync'))
-    setQty(1); setRating(null); setNote(''); setManualLocation(null)
+    setQty(1); setRating(null); setNote(''); setManualLocation(null); setPlaceTyped('')
     setCustomTime(false); setWhen('')
     // 3 seconds to regret it, then back home
     clearTimeout(navTimer.current)
@@ -187,40 +196,46 @@ export default function LogEntryScreen() {
       <div>
         <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--c-text-muted)' }}>Escenario de los hechos</label>
         {gpsStatus === 'resolving' && (
-          <div className="text-sm flex items-center gap-2" style={{ color: 'var(--c-text-muted)' }}>
+          <div className="text-sm flex items-center gap-2 mb-1.5" style={{ color: 'var(--c-text-muted)' }}>
             <span className="animate-spin inline-block">↻</span> Localizando… (preparando la coartada)
           </div>
         )}
-        {gpsStatus === 'resolved' && location && !manualLocation && (
-          <div className="text-sm flex items-center gap-1.5 px-3 py-2 rounded-xl" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}>
+        {gpsStatus === 'resolved' && location && !manualLocation && !placeTyped.trim() && (
+          <div className="text-sm flex items-center gap-1.5 px-3 py-2 rounded-xl mb-1.5" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}>
             <span>📍</span>
             <span className="flex-1">{location.label || `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`}</span>
-            <button type="button" onClick={() => setManualLocation(null)} className="text-xs ml-1" style={{ color: 'var(--c-text-muted)' }}>✕</button>
+            <span className="text-[10px]" style={{ color: 'var(--c-text-muted)' }}>GPS</span>
           </div>
         )}
         {manualLocation && (
-          <div className="text-sm flex items-center gap-1.5 px-3 py-2 rounded-xl" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}>
+          <div className="text-sm flex items-center gap-1.5 px-3 py-2 rounded-xl mb-1.5" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}>
             <span>📍</span>
             <span className="flex-1">{manualLocation.label}</span>
             <button type="button" onClick={() => setManualLocation(null)} className="text-xs ml-1" style={{ color: 'var(--c-text-muted)' }}>✕</button>
           </div>
         )}
-        {showFallback && recentLocations.length > 0 && !manualLocation && (
-          <div>
-            <p className="text-xs mb-1.5" style={{ color: 'var(--c-text-muted)' }}>Sin GPS — toca un sitio reciente (de los de siempre):</p>
-            <div className="flex flex-col gap-1">
-              {recentLocations.map((loc, i) => (
-                <button
-                  key={i} type="button" onClick={() => setManualLocation(loc)}
-                  className="text-left text-sm px-3 py-2 rounded-xl active:opacity-70"
-                  style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
-                >
-                  📍 {loc.label}
-                </button>
-              ))}
-            </div>
+        {recentLocations.length > 0 && !manualLocation && (
+          <div className="flex flex-wrap gap-1.5 mb-1.5">
+            {recentLocations.map((loc, i) => (
+              <button
+                key={i} type="button"
+                onClick={() => { setManualLocation(loc); setPlaceTyped('') }}
+                className="text-xs px-3 py-1.5 rounded-full active:opacity-70"
+                style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: 'var(--c-text)' }}
+              >
+                📍 {loc.label}
+              </button>
+            ))}
           </div>
         )}
+        <input
+          type="text"
+          value={placeTyped}
+          onChange={e => { setPlaceTyped(e.target.value); if (e.target.value.trim()) setManualLocation(null) }}
+          placeholder="…o escribe el sitio a mano (p. ej. Cala Galdana)"
+          className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+          style={{ background: 'var(--c-surface)', border: '1.5px solid var(--c-border)', color: 'var(--c-text)' }}
+        />
       </div>
 
       {/* Note */}
