@@ -11,6 +11,9 @@ export default function ConfettiOverlay() {
     const triggered = checkMilestones(entries, counters, milestonesFired)
     for (const m of triggered) {
       dispatch({ type: 'PUSH_MILESTONE', milestone: m })
+      // Persist immediately (and sync to the family) — without this the
+      // same milestone re-fired its confetti on every single app load
+      dispatch({ type: 'MARK_MILESTONE_FIRED', key: m.key })
     }
   }, [entries.length])
 
